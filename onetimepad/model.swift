@@ -6,9 +6,22 @@
 //
 
 import Foundation
+import Firebase
+import FirebaseFirestoreSwift
+
+
+struct Message: Codable, Identifiable, Equatable, Hashable {
+    
+    @DocumentID var id: String?
+    var text: String
+    var sender: String
+}
 
 
 class Model: ObservableObject {
+    
+    private let db = Firestore.firestore()
+    private let chatId = "uHzegTVQWDePh8niEjnX"
     
     // Dictionaries for map from alphabet to integer and back
     let a_to_n = ["a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10, "l": 11, "m": 12, "n": 13, "o": 14, "p": 15, "q": 16, "r": 17, "s": 18, "t": 19, "u": 20, "v": 21, "w": 22, "x": 23, "y": 24, "z": 25, " ": 26]
@@ -18,7 +31,41 @@ class Model: ObservableObject {
     @Published var enc_p: Int = 0 // encoding codebook pointer
     @Published var dec_p: Int = 0 // decoding codebook pointer
     @Published var error = false // error indicator
-    @Published var ciphertexts: [String] = []
+    @Published var messages: [Message] = []
+    @Published var dec_ind: Int = 0
+    
+    init () {
+        attach()
+    }
+    
+    func attach () {
+        
+        db.collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .addSnapshotListener { (snapshot, err) in
+                
+                if let err = err {
+                    print("Error: \(err)")
+                }
+                    
+                guard let snapshot = snapshot else {
+                    print("Snapshot nil")
+                    return
+                }
+                    
+                self.messages = snapshot.documents.compactMap { document in
+                    
+                    guard let msg = try? document.data(as: Message.self) else {
+                        print("Error: could not cast to Msg")
+                        print(document.data())
+                        return nil
+                    }
+                    
+                    return msg
+                }
+            }
+    }
     
     func generate (n: Int) {
         for _ in 0..<n {
@@ -44,14 +91,27 @@ class Model: ObservableObject {
             enc_p += 1
         }
         
-        ciphertexts.append(cipher)
+        let msg = Message(text: cipher, sender: "bob")
+        
+        do {
+            let _ = try db.collection("chats").document(chatId).collection("messages").addDocument(from: msg)
+        } catch {
+            print(error)
+            enc_p -= plain.count
+        }
+        
+        
     }
     
     func dec () -> String {
         
+        guard dec_ind < messages.count else {
+            return ""
+        }
+        
         var plaintext = ""
 
-        let cipher = ciphertexts[0]
+        let cipher = messages[dec_ind].text
         
         for i in cipher {
             let c = String(i)
@@ -60,7 +120,7 @@ class Model: ObservableObject {
             dec_p += 1
         }
         
-        ciphertexts.removeFirst()
+        dec_ind += 1
         
         return plaintext
     }

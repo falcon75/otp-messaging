@@ -19,10 +19,16 @@ This technique was initially used by secret agents that would come together to s
 
 <br>
 
-## Simple local OTP app:
+## Firebase Backend OTP App
 
 <br>
 
-![app gif](vid.gif)
+The cipher text is written to a chat collection in Firebase, a listener fetches messages from 
+the chat making them available to be decrypted. Next to add: QR codebook sharing so that two 
+people can participate in the chat.
+
+<br>
+
+![app v2 gif](vid2.gif)
 
 
