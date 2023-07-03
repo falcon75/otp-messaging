@@ -13,22 +13,26 @@
 		2202FD5D28AD7033007FD927 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD5C28AD7033007FD927 /* FirebaseFirestore */; };
 		2202FD6228AD7125007FD927 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD6128AD7125007FD927 /* FirebaseFirestoreSwift */; };
 		2247BA78288C2EF3005E25AE /* onetimepadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA77288C2EF3005E25AE /* onetimepadApp.swift */; };
-		2247BA7A288C2EF3005E25AE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA79288C2EF3005E25AE /* ContentView.swift */; };
+		2247BA7A288C2EF3005E25AE /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA79288C2EF3005E25AE /* ChatView.swift */; };
 		2247BA7C288C2EF5005E25AE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2247BA7B288C2EF5005E25AE /* Assets.xcassets */; };
 		2247BA7F288C2EF5005E25AE /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2247BA7E288C2EF5005E25AE /* Preview Assets.xcassets */; };
-		2247BA86288C369B005E25AE /* model.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA85288C369B005E25AE /* model.swift */; };
+		2247BA86288C369B005E25AE /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA85288C369B005E25AE /* ChatModel.swift */; };
+		227B46392A5314D900712179 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 227B46382A5314D900712179 /* MainView.swift */; };
+		227B463B2A53183400712179 /* ShopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 227B463A2A53183400712179 /* ShopView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2202FD5528AD6F6D007FD927 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2247BA74288C2EF3005E25AE /* onetimepad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = onetimepad.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2247BA77288C2EF3005E25AE /* onetimepadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onetimepadApp.swift; sourceTree = "<group>"; };
-		2247BA79288C2EF3005E25AE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2247BA79288C2EF3005E25AE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		2247BA7B288C2EF5005E25AE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2247BA7E288C2EF5005E25AE /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		2247BA85288C369B005E25AE /* model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = model.swift; sourceTree = "<group>"; };
+		2247BA85288C369B005E25AE /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
 		227B46362A52E94300712179 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		227B46372A52EC4800712179 /* onetimepad.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = onetimepad.entitlements; sourceTree = "<group>"; };
+		227B46382A5314D900712179 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		227B463A2A53183400712179 /* ShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,8 +72,10 @@
 				227B46372A52EC4800712179 /* onetimepad.entitlements */,
 				227B46362A52E94300712179 /* Info.plist */,
 				2247BA77288C2EF3005E25AE /* onetimepadApp.swift */,
-				2247BA79288C2EF3005E25AE /* ContentView.swift */,
-				2247BA85288C369B005E25AE /* model.swift */,
+				2247BA79288C2EF3005E25AE /* ChatView.swift */,
+				227B46382A5314D900712179 /* MainView.swift */,
+				227B463A2A53183400712179 /* ShopView.swift */,
+				2247BA85288C369B005E25AE /* ChatModel.swift */,
 				2247BA7B288C2EF5005E25AE /* Assets.xcassets */,
 				2202FD5528AD6F6D007FD927 /* GoogleService-Info.plist */,
 				2247BA7D288C2EF5005E25AE /* Preview Content */,
@@ -166,8 +172,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2247BA7A288C2EF3005E25AE /* ContentView.swift in Sources */,
-				2247BA86288C369B005E25AE /* model.swift in Sources */,
+				2247BA7A288C2EF3005E25AE /* ChatView.swift in Sources */,
+				227B46392A5314D900712179 /* MainView.swift in Sources */,
+				2247BA86288C369B005E25AE /* ChatModel.swift in Sources */,
+				227B463B2A53183400712179 /* ShopView.swift in Sources */,
 				2247BA78288C2EF3005E25AE /* onetimepadApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

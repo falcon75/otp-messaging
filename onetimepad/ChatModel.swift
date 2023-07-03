@@ -1,5 +1,5 @@
 //
-//  model.swift
+//  ChatModel.swift
 //  onetimepad
 //
 //  Created by Samuel McHale on 23/07/2022.
@@ -13,15 +13,16 @@ import FirebaseFirestoreSwift
 struct Message: Codable, Identifiable, Equatable, Hashable {
     
     @DocumentID var id: String?
+    var date: Date
     var text: String
     var sender: String
 }
 
 
-class Model: ObservableObject {
+class ChatModel: ObservableObject {
     
     private let db = Firestore.firestore()
-    private let chatId = "uHzegTVQWDePh8niEjnX"
+    private var chatId: String
     
     // Dictionaries for map from alphabet to integer and back
     let a_to_n = ["a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10, "l": 11, "m": 12, "n": 13, "o": 14, "p": 15, "q": 16, "r": 17, "s": 18, "t": 19, "u": 20, "v": 21, "w": 22, "x": 23, "y": 24, "z": 25, " ": 26]
@@ -34,7 +35,8 @@ class Model: ObservableObject {
     @Published var messages: [Message] = []
     @Published var dec_ind: Int = 0
     
-    init () {
+    init (chatId: String) {
+        self.chatId = chatId
         attach()
     }
     
@@ -43,6 +45,7 @@ class Model: ObservableObject {
         db.collection("chats")
             .document(chatId)
             .collection("messages")
+            .order(by: "date", descending: false)
             .addSnapshotListener { (snapshot, err) in
                 
                 if let err = err {
@@ -91,7 +94,7 @@ class Model: ObservableObject {
             enc_p += 1
         }
         
-        let msg = Message(text: cipher, sender: "bob")
+        let msg = Message(date: Date(), text: cipher, sender: "bob")
         
         do {
             let _ = try db.collection("chats").document(chatId).collection("messages").addDocument(from: msg)

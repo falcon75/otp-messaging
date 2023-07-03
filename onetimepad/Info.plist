@@ -20,6 +20,8 @@
             </array>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
+            <key>LSSupportsOpeningDocumentsInPlace</key>
+            <string>YES</string>
         </dict>
 	</array>
 </dict>
