@@ -16,6 +16,42 @@ struct ContentView: View {
     @State var codebookExpanded = false
     @State var ciphersExpanded = false
     
+    struct MyDataStructure: Codable {
+        var id: String
+        var numbers: [Int]
+    }
+    
+    let dataToShare = MyDataStructure(id: "123", numbers: [1, 2, 3]) // Replace with your own data structure
+
+    func shareData() {
+        guard let data = try? JSONEncoder().encode(dataToShare) else {
+            print("Failed to encode data.")
+            return
+        }
+
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let fileURL = temporaryDirectory.appendingPathComponent("sharedData.json")
+
+        do {
+            try data.write(to: fileURL)
+
+            let activityViewController = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            UIApplication.shared.windows.first?.rootViewController?.present(activityViewController, animated: true, completion: nil)
+        } catch {
+            print("Failed to write data to file: \(error)")
+        }
+    }
+    
+    private func handleSharedData(url: URL) {
+        do {
+            let data = try Data(contentsOf: url)
+            let receivedData = try JSONDecoder().decode(MyDataStructure.self, from: data)
+            print(receivedData)
+        } catch {
+            print("Failed to handle shared data: \(error)")
+        }
+    }
+    
     var body: some View {
         
         VStack {
@@ -91,7 +127,15 @@ struct ContentView: View {
             .cornerRadius(10)
     
             Spacer()
+            
+            Button(action: shareData) {
+                Text("Share Data")
+            }
+
         }.padding()
+        .onOpenURL(perform: { url in
+            handleSharedData(url: url)
+        })
     }
 }
 
