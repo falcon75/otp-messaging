@@ -40,9 +40,9 @@ struct ChatView: View {
                     chatmodel.generate(n: 100)
                 } label: {
                     Image(systemName: "plus.circle")
-                    Text(" 📖 " + String(chatmodel.enc_p) + " / " + String(chatmodel.code.count))
+                    Text(" 📖 " + String(chatmodel.pointer) + " / " + String(chatmodel.code.count))
                         .padding()
-                        .foregroundColor(chatmodel.enc_p >= chatmodel.code.count ? .red : .black)
+                        .foregroundColor(chatmodel.pointer >= chatmodel.code.count ? .red : .black)
                 }
             }
             
@@ -73,7 +73,7 @@ struct ChatView: View {
                 TextField("Plaintext", text: $plain_in).autocapitalization(.none)
                 Button("Encrypt & Send") {
                     chatmodel.enc(plain: plain_in.lowercased())
-                }.disabled(chatmodel.code.count < chatmodel.enc_p)
+                }.disabled(chatmodel.code.count < chatmodel.pointer)
             }
         }.padding()
     }
@@ -100,6 +100,6 @@ struct PopoverContent: View {
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(chatmodel: ChatModel(chatId: "uHzegTVQWDePh8niEjnX"))
+        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"))
     }
 }

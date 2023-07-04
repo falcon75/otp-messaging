@@ -10,14 +10,61 @@ import Firebase
 import FirebaseFirestoreSwift
 
 
+struct Chat: Codable, Identifiable, Equatable, Hashable {
+    @DocumentID var id: String?
+    var members: [String]
+}
+
+struct ShareCodebook: Codable {
+    var id: String
+    var codebook: [Int]
+}
+
+class CodebookStore {
+    static let shared = CodebookStore()
+    var pendingSC: ShareCodebook? = nil
+    
+    func storeCodebook(uid: String, codebook: [Int]) {
+        let defaults = UserDefaults.standard
+        defaults.set(codebook, forKey: uid)
+    }
+    
+    func getCodebook(for uid: String) -> [Int]? {
+        let defaults = UserDefaults.standard
+        return defaults.array(forKey: uid) as? [Int]
+    }
+}
+
 struct MainView: View {
     @ObservedObject private var userManager = UserManager.shared
+    var debug: Bool
     private let db = Firestore.firestore()
     @State var chats: [Chat] = []
     
-    struct Chat: Codable, Identifiable, Equatable, Hashable {
-        @DocumentID var id: String?
-        var members: [String]
+    init (debug: Bool = false) {
+        self.debug = debug
+        if debug {
+            chats = [
+                Chat(id: "123", members: ["bob", "alice"]),
+                Chat(id: "123", members: ["bob", "alice"]),
+                Chat(id: "123", members: ["bob", "alice"])
+            ]
+        }
+    }
+    
+    func otherUser(chat: Chat) -> String {
+        guard let user = UserManager.shared.currentUser else {
+            print("No User")
+            return ""
+        }
+        
+        for mem in chat.members {
+            if mem != user.uid {
+                return mem
+            }
+            print("this shouldnt be possible, ensure")
+        }
+        return ""
     }
     
     func attach () {
@@ -48,12 +95,21 @@ struct MainView: View {
                     }
                     return msg
                 }
+                
+                if let sc = CodebookStore.shared.pendingSC {
+                    for change in snapshot.documentChanges {
+                        if change.type == .added {
+                            let addedDocument = change.document
+                            guard let chat = try? addedDocument.data(as: Chat.self) else {
+                                print("Error: could not cast to Msg")
+                                print(addedDocument.data())
+                                return
+                            }
+                            CodebookStore.shared.storeCodebook(uid: otherUser(chat: chat), codebook: sc.codebook)
+                        }
+                    }
+                }
             }
-    }
-    
-    struct ShareCodebook: Codable {
-        var id: String
-        var codebook: [Int]
     }
     
     private func generate (n: Int) -> [Int] {
@@ -90,13 +146,26 @@ struct MainView: View {
         } catch {
             print("Failed to share codebook: \(error)")
         }
+        
+        CodebookStore.shared.pendingSC = sc
     }
     
     private func handleSharedData(url: URL) {
+        guard let user = userManager.currentUser else {
+            print("No user")
+            return
+        }
+        
         do {
             let data = try Data(contentsOf: url)
-            let receivedData = try JSONDecoder().decode(ShareCodebook.self, from: data)
-            print(receivedData.codebook)
+            let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
+            CodebookStore.shared.storeCodebook(uid: sc.id, codebook: sc.codebook)
+            
+            do {
+                let _ = try db.collection("chats").addDocument(from: Chat(members: [sc.id, user.uid]))
+            } catch {
+                print(error)
+            }
         } catch {
             print("Failed to handle recieved codebook: \(error)")
         }
@@ -128,7 +197,11 @@ struct MainView: View {
                 Spacer()
                 ForEach(chats) { chat in
                     if let chatId = chat.id {
-                        NavigationLink(chatId, destination: ChatView(chatmodel: ChatModel(chatId: chatId)))
+                        NavigationLink(chatId, destination: ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))))
+                            .frame(width: 350, height: 90)
+                            .background(.gray)
+                            .foregroundColor(.white)
+                            .cornerRadius(20)
                         Spacer()
                     }
                 }
@@ -146,6 +219,6 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView()
+        MainView(debug: true)
     }
 }
