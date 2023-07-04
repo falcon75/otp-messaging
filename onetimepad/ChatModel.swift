@@ -11,7 +11,6 @@ import FirebaseFirestoreSwift
 
 
 struct Message: Codable, Identifiable, Equatable, Hashable {
-    
     @DocumentID var id: String?
     var date: Date
     var text: String
@@ -20,7 +19,6 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
 
 
 class ChatModel: ObservableObject {
-    
     private let db = Firestore.firestore()
     private var chatId: String
     
@@ -41,7 +39,6 @@ class ChatModel: ObservableObject {
     }
     
     func attach () {
-        
         db.collection("chats")
             .document(chatId)
             .collection("messages")
@@ -77,7 +74,6 @@ class ChatModel: ObservableObject {
     }
     
     func enc (plain: String){
-        
         var cipher = ""
         
         if plain.count > code.count - enc_p {
@@ -102,12 +98,9 @@ class ChatModel: ObservableObject {
             print(error)
             enc_p -= plain.count
         }
-        
-        
     }
     
     func dec () -> String {
-        
         guard dec_ind < messages.count else {
             return ""
         }

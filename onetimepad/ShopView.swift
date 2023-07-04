@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 struct ShopView: View {
     var body: some View {
         VStack {
@@ -53,13 +54,11 @@ struct ShopView: View {
                         .foregroundColor(.white)
                         .font(.caption)
                         .offset(x: 100, y: -70)
-                    
                 }
             }
             Spacer()
         }
         .padding()
-            
     }
 }
 

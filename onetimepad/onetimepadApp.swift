@@ -7,12 +7,30 @@
 
 import SwiftUI
 import FirebaseCore
+import FirebaseAuth
+import Combine
+
+
+struct User: Equatable {
+    var uid: String
+}
+
+class UserManager: ObservableObject {
+    @Published var currentUser: User?
+    static let shared = UserManager()
+    private init() {}
+}
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
-    return true
-  }
+    var userManager: UserManager!
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        Auth.auth().signInAnonymously { authResult, error in
+            guard let user = authResult?.user else { return }
+            UserManager.shared.currentUser = User(uid: user.uid)
+        }
+        return true
+    }
 }
 
 @main

@@ -7,16 +7,19 @@
 
 import SwiftUI
 
+
 struct ChatView: View {
     
-    @StateObject var chatmodel: ChatModel = ChatModel(chatId: "uHzegTVQWDePh8niEjnX")
-    
+    @StateObject var chatmodel: ChatModel
     @State var plain_in: String = ""
     @State var plain_out: String = ""
     @State var codebookExpanded = false
     @State var ciphersExpanded = false
-    
     @State private var isPopoverPresented = false
+    
+    init (chatmodel: ChatModel) {
+        _chatmodel = StateObject(wrappedValue: chatmodel)
+    }
 
     var body: some View {
         
@@ -88,9 +91,7 @@ struct PopoverContent: View {
             }
             
             Spacer()
-            
             Text("Description of how to generate codebook")
-            
             Spacer()
         }
         .padding()
@@ -99,6 +100,6 @@ struct PopoverContent: View {
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView()
+        ChatView(chatmodel: ChatModel(chatId: "uHzegTVQWDePh8niEjnX"))
     }
 }

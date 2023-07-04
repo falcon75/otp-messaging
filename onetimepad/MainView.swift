@@ -6,8 +6,50 @@
 //
 
 import SwiftUI
+import Firebase
+import FirebaseFirestoreSwift
+
 
 struct MainView: View {
+    @ObservedObject private var userManager = UserManager.shared
+    private let db = Firestore.firestore()
+    @State var chats: [Chat] = []
+    
+    struct Chat: Codable, Identifiable, Equatable, Hashable {
+        @DocumentID var id: String?
+        var members: [String]
+    }
+    
+    func attach () {
+        guard let user = userManager.currentUser else {
+            print("No user")
+            return
+        }
+        
+        db.collection("chats")
+            .whereField("members", arrayContains: user.uid)
+//            .order(by: "date", descending: false)
+            .addSnapshotListener { (snapshot, err) in
+                
+                if let err = err {
+                    print("Error: \(err)")
+                }
+                    
+                guard let snapshot = snapshot else {
+                    print("Snapshot nil")
+                    return
+                }
+                    
+                self.chats = snapshot.documents.compactMap { document in
+                    guard let msg = try? document.data(as: Chat.self) else {
+                        print("Error: could not cast to Msg")
+                        print(document.data())
+                        return nil
+                    }
+                    return msg
+                }
+            }
+    }
     
     struct ShareCodebook: Codable {
         var id: String
@@ -23,8 +65,12 @@ struct MainView: View {
     }
 
     private func shareData() {
+        guard let user = userManager.currentUser else {
+            print("No user")
+            return
+        }
         
-        let sc = ShareCodebook(id: "123", codebook: self.generate(n: 1000))
+        let sc = ShareCodebook(id: user.uid, codebook: self.generate(n: 1000))
         
         guard let data = try? JSONEncoder().encode(sc) else {
             print("Failed to encode data.")
@@ -72,20 +118,29 @@ struct MainView: View {
                         } label: {
                             Image(systemName: "star.circle")
                         }
-                        Button(action: shareData) {
+                        Button {
+                            shareData()
+                        } label: {
                             Image(systemName: "plus")
                         }
                     }
                 }
                 Spacer()
-                NavigationLink("Chat", destination: ChatView())
-                Spacer()
+                ForEach(chats) { chat in
+                    if let chatId = chat.id {
+                        NavigationLink(chatId, destination: ChatView(chatmodel: ChatModel(chatId: chatId)))
+                        Spacer()
+                    }
+                }
             }.padding()
             
         }
         .onOpenURL(perform: { url in
             handleSharedData(url: url)
         })
+        .onChange(of: userManager.currentUser) { newUser in
+            attach()
+        }
     }
 }
 
