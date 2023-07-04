@@ -29,16 +29,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             guard let user = authResult?.user else { return }
             UserManager.shared.currentUser = User(uid: user.uid)
         }
-        
-//        let defaults = UserDefaults.standard
-//
-//        // Remove all entries from user defaults
-//        if let bundleIdentifier = Bundle.main.bundleIdentifier {
-//            defaults.removePersistentDomain(forName: bundleIdentifier)
-//        }
-//
-//        // Synchronize the changes
-//        defaults.synchronize()
         return true
     }
 }
@@ -49,7 +39,6 @@ struct onetimepadApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()
-//            Text("Hi")
         }
     }
 }

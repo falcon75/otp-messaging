@@ -60,6 +60,11 @@ struct MainView: View {
     @ObservedObject private var userManager = UserManager.shared
     private let db = Firestore.firestore()
     @State var chats: [Chat] = []
+    private var debug: Bool
+    
+    init(debug: Bool = false) {
+        self.debug = debug
+    }
     
     func otherUser(chat: Chat) -> String {
         guard let user = UserManager.shared.currentUser else {
@@ -169,11 +174,11 @@ struct MainView: View {
         do {
             let data = try Data(contentsOf: url)
             let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
-            let chatData = ChatData(codebook: sc.codebook, messages: [])
-            ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             
             do {
                 let _ = try db.collection("chats").addDocument(from: Chat(members: [sc.id, user.uid]))
+                let chatData = ChatData(codebook: sc.codebook, messages: [])
+                ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             } catch {
                 print(error)
             }
@@ -192,6 +197,15 @@ struct MainView: View {
                         Spacer()
                     }
                     HStack {
+                        Button {
+                            let defaults = UserDefaults.standard
+                            if let bundleIdentifier = Bundle.main.bundleIdentifier {
+                                defaults.removePersistentDomain(forName: bundleIdentifier)
+                            }
+                            defaults.synchronize()
+                        } label: {
+                            Image(systemName: "xmark.bin")
+                        }
                         Spacer()
                         NavigationLink {
                             ShopView()
@@ -206,7 +220,7 @@ struct MainView: View {
                     }
                 }
                 Spacer()
-                ForEach(chats) { chat in
+                ForEach(debug ? sampleChats : chats) { chat in
                     if let chatId = chat.id {
                         NavigationLink(chatId, destination: ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))))
                             .frame(width: 350, height: 90)
@@ -227,8 +241,14 @@ struct MainView: View {
     }
 }
 
+let sampleChats = [
+    Chat(id: "123", members: ["bob", "alice"]),
+    Chat(id: "123", members: ["bob", "alice"]),
+    Chat(id: "123", members: ["bob", "alice"])
+]
+
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView()
+        MainView(debug: true)
     }
 }

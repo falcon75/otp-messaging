@@ -17,8 +17,10 @@ struct ChatView: View {
     @State var ciphersExpanded = false
     @State private var isPopoverPresented = false
     @State private var scrollToEnd = false
+    private var debug: Bool
     
-    init (chatmodel: ChatModel) {
+    init (chatmodel: ChatModel, debug: Bool = false) {
+        self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
 
@@ -38,7 +40,6 @@ struct ChatView: View {
                 Spacer()
                 
                 Button {
-//                    chatmodel.generate(n: 100)
                     print("generate")
                 } label: {
                     Image(systemName: "plus.circle")
@@ -51,8 +52,8 @@ struct ChatView: View {
             ScrollView {
                 ScrollViewReader { scrollViewProxy in
                     LazyVStack(spacing: 10) {
-                        ForEach(chatmodel.messagesDec.indices, id: \.self) { index in
-                            let message = chatmodel.messagesDec[index]
+                        ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
+                            let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
                             if message.sender == UserManager.shared.currentUser!.uid {
                                 HStack {
                                     Spacer()
@@ -122,8 +123,14 @@ struct PopoverContent: View {
     }
 }
 
+let sampleMessages = [
+    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob"),
+    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob"),
+    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob")
+]
+
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"))
+        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
     }
 }
