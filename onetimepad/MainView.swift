@@ -20,37 +20,46 @@ struct ShareCodebook: Codable {
     var codebook: [Int]
 }
 
-class CodebookStore {
-    static let shared = CodebookStore()
+struct MessageDec: Codable, Equatable, Identifiable {
+    var id: String
+    var date: Date
+    var text: String
+    var sender: String
+}
+
+struct ChatData: Codable {
+    var codebook: [Int]
+    var messages: [MessageDec]
+}
+
+class ChatStore {
+    static let shared = ChatStore()
     var pendingSC: ShareCodebook? = nil
     
-    func storeCodebook(uid: String, codebook: [Int]) {
-        let defaults = UserDefaults.standard
-        defaults.set(codebook, forKey: uid)
+    func storeChat(uid: String, chatData: ChatData) {
+        let jsonEncoder = JSONEncoder()
+        if let encoded = try? jsonEncoder.encode(chatData) {
+            let defaults = UserDefaults.standard
+            defaults.set(encoded, forKey: uid)
+        }
     }
     
-    func getCodebook(for uid: String) -> [Int]? {
+    func getChat(for uid: String) -> ChatData? {
         let defaults = UserDefaults.standard
-        return defaults.array(forKey: uid) as? [Int]
+        if let encoded = defaults.data(forKey: uid) {
+            let jsonDecoder = JSONDecoder()
+            if let decoded = try? jsonDecoder.decode(ChatData.self, from: encoded) {
+                return decoded
+            }
+        }
+        return nil
     }
 }
 
 struct MainView: View {
     @ObservedObject private var userManager = UserManager.shared
-    var debug: Bool
     private let db = Firestore.firestore()
     @State var chats: [Chat] = []
-    
-    init (debug: Bool = false) {
-        self.debug = debug
-        if debug {
-            chats = [
-                Chat(id: "123", members: ["bob", "alice"]),
-                Chat(id: "123", members: ["bob", "alice"]),
-                Chat(id: "123", members: ["bob", "alice"])
-            ]
-        }
-    }
     
     func otherUser(chat: Chat) -> String {
         guard let user = UserManager.shared.currentUser else {
@@ -88,15 +97,16 @@ struct MainView: View {
                 }
                     
                 self.chats = snapshot.documents.compactMap { document in
-                    guard let msg = try? document.data(as: Chat.self) else {
+                    guard let chat = try? document.data(as: Chat.self) else {
                         print("Error: could not cast to Msg")
                         print(document.data())
                         return nil
                     }
-                    return msg
+                    print(chat)
+                    return chat
                 }
                 
-                if let sc = CodebookStore.shared.pendingSC {
+                if let sc = ChatStore.shared.pendingSC {
                     for change in snapshot.documentChanges {
                         if change.type == .added {
                             let addedDocument = change.document
@@ -105,7 +115,8 @@ struct MainView: View {
                                 print(addedDocument.data())
                                 return
                             }
-                            CodebookStore.shared.storeCodebook(uid: otherUser(chat: chat), codebook: sc.codebook)
+                            let chatData = ChatData(codebook: sc.codebook, messages: [])
+                            ChatStore.shared.storeChat(uid: otherUser(chat: chat), chatData: chatData)
                         }
                     }
                 }
@@ -134,7 +145,7 @@ struct MainView: View {
         }
 
         let temporaryDirectory = FileManager.default.temporaryDirectory
-        let fileURL = temporaryDirectory.appendingPathComponent("Codebook.json")
+        let fileURL = temporaryDirectory.appendingPathComponent("Codebook 🔒.json")
 
         do {
             try data.write(to: fileURL)
@@ -146,8 +157,7 @@ struct MainView: View {
         } catch {
             print("Failed to share codebook: \(error)")
         }
-        
-        CodebookStore.shared.pendingSC = sc
+        ChatStore.shared.pendingSC = sc
     }
     
     private func handleSharedData(url: URL) {
@@ -159,7 +169,8 @@ struct MainView: View {
         do {
             let data = try Data(contentsOf: url)
             let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
-            CodebookStore.shared.storeCodebook(uid: sc.id, codebook: sc.codebook)
+            let chatData = ChatData(codebook: sc.codebook, messages: [])
+            ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             
             do {
                 let _ = try db.collection("chats").addDocument(from: Chat(members: [sc.id, user.uid]))
@@ -206,7 +217,6 @@ struct MainView: View {
                     }
                 }
             }.padding()
-            
         }
         .onOpenURL(perform: { url in
             handleSharedData(url: url)
@@ -219,6 +229,6 @@ struct MainView: View {
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
-        MainView(debug: true)
+        MainView()
     }
 }

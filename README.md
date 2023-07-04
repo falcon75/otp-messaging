@@ -20,10 +20,17 @@ This could instead be a fun feature living on top of a secure messaging app
 - One time pad Encryption ✅
 - Firebase messaging backend (post encryption) ✅
 - Share codebook with friends via Airdrop ✅
+
 <br>
+
 - Embed chat key in share, to match against when sender detects new chat
 - Typing indicator
 - chat last modfied indicator, message notification and message preview
+- Scroll to bottom with new messages
+- Add codes when chat exists
+- Local name and picture assignment
+- Full unicode charset
+- 
 
 <br>
 

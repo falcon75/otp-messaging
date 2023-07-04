@@ -16,6 +16,7 @@ struct ChatView: View {
     @State var codebookExpanded = false
     @State var ciphersExpanded = false
     @State private var isPopoverPresented = false
+    @State private var scrollToEnd = false
     
     init (chatmodel: ChatModel) {
         _chatmodel = StateObject(wrappedValue: chatmodel)
@@ -37,33 +38,56 @@ struct ChatView: View {
                 Spacer()
                 
                 Button {
-                    chatmodel.generate(n: 100)
+//                    chatmodel.generate(n: 100)
+                    print("generate")
                 } label: {
                     Image(systemName: "plus.circle")
-                    Text(" 📖 " + String(chatmodel.pointer) + " / " + String(chatmodel.code.count))
+                    Text(" 📖 " + String(chatmodel.code.count))
                         .padding()
-                        .foregroundColor(chatmodel.pointer >= chatmodel.code.count ? .red : .black)
+                        .foregroundColor(chatmodel.code.count <= 0 ? .red : .black)
                 }
             }
             
             ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(chatmodel.messages.indices, id: \.self) { index in
-                        let message = chatmodel.messages[index]
-                        HStack {
-                            Text(message.text)
-                                .padding(10)
-                                .foregroundColor(.black)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(10)
-                            if chatmodel.dec_ind == index {
-                                Button {
-                                    chatmodel.messages[index].text = chatmodel.dec()
-                                } label: {
-                                    Image(systemName: "lock.open")
+                ScrollViewReader { scrollViewProxy in
+                    LazyVStack(spacing: 10) {
+                        ForEach(chatmodel.messagesDec.indices, id: \.self) { index in
+                            let message = chatmodel.messagesDec[index]
+                            if message.sender == UserManager.shared.currentUser!.uid {
+                                HStack {
+                                    Spacer()
+                                    Text(message.text)
+                                        .padding(10)
+                                        .foregroundColor(.black)
+                                        .background(Color.gray.opacity(0.2))
+                                        .cornerRadius(10)
+                                }
+                            } else {
+                                HStack {
+                                    Text(message.text)
+                                        .padding(10)
+                                        .foregroundColor(.black)
+                                        .background(Color.gray.opacity(0.2))
+                                        .cornerRadius(10)
+                                    Spacer()
                                 }
                             }
-                            Spacer()
+                        }
+                    }
+                    .onChange(of: chatmodel.messagesDec) { _ in
+                        scrollToEnd = true
+                    }
+                    .onAppear {
+                        scrollToEnd = true
+                    }
+                    .onReceive(chatmodel.objectWillChange) { _ in
+                        if scrollToEnd {
+                            DispatchQueue.main.async {
+                                withAnimation {
+                                    scrollViewProxy.scrollTo(chatmodel.messagesDec.last?.id, anchor: .bottom)
+                                }
+                                scrollToEnd = false
+                            }
                         }
                     }
                 }
@@ -73,7 +97,7 @@ struct ChatView: View {
                 TextField("Plaintext", text: $plain_in).autocapitalization(.none)
                 Button("Encrypt & Send") {
                     chatmodel.enc(plain: plain_in.lowercased())
-                }.disabled(chatmodel.code.count < chatmodel.pointer)
+                }.disabled(chatmodel.code.count <= 0)
             }
         }.padding()
     }
