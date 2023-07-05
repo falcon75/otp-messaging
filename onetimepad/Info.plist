@@ -11,18 +11,18 @@
 			<string>Default</string>
 		</dict>
 		<dict/>
-        <dict>
-            <key>CFBundleTypeName</key>
-            <string>JSON Codebook</string>
-            <key>LSItemContentTypes</key>
-            <array>
-                <string>public.json</string>
-            </array>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>LSSupportsOpeningDocumentsInPlace</key>
-            <string>YES</string>
-        </dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>JSON Codebook</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>LSSupportsOpeningDocumentsInPlace</key>
+			<string>YES</string>
+		</dict>
 	</array>
 </dict>
 </plist>
