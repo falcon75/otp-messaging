@@ -23,55 +23,55 @@ struct ChatView: View {
         self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
+    
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         
         VStack {
-            HStack {
+            HStack(spacing: 14) {
+                Button {
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Image(systemName: "arrow.left").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                }
                 Button {
                     isPopoverPresented = true
                 } label: {
-                    Image(systemName: "rectangle.expand.vertical")
+                    HStack {
+                        Image(systemName: "person")
+                            .font(.title)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .padding()
+                        Text("Steve Jobs").fontWeight(.bold)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                        Spacer()
+                        Text(" 📖 " + String(chatmodel.code.count))
+                            .fontWeight(.bold)
+                            .padding()
+                            .foregroundColor(chatmodel.code.count <= 0 ? .red : .black)
+                    }
+                    .background(colorScheme == .dark ? Color.black : Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
                     PopoverContent()
-                }.padding()
-
-                Spacer()
-                
-                Button {
-                    print("generate")
-                } label: {
-                    Image(systemName: "plus.circle")
-                    Text(" 📖 " + String(chatmodel.code.count))
-                        .padding()
-                        .foregroundColor(chatmodel.code.count <= 0 ? .red : .black)
                 }
             }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            
             
             ScrollView {
                 ScrollViewReader { scrollViewProxy in
-                    LazyVStack(spacing: 10) {
+                    LazyVStack(spacing: 5) {
                         ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
                             let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
-                            if message.sender == UserManager.shared.currentUser!.uid {
-                                HStack {
-                                    Spacer()
-                                    Text(message.text)
-                                        .padding(10)
-                                        .foregroundColor(.black)
-                                        .background(Color.gray.opacity(0.2))
-                                        .cornerRadius(10)
-                                }
+                            if debug {
+                                BubbleView(text: message.text, isFromCurrentUser: message.sender == "steve")
                             } else {
-                                HStack {
-                                    Text(message.text)
-                                        .padding(10)
-                                        .foregroundColor(.black)
-                                        .background(Color.gray.opacity(0.2))
-                                        .cornerRadius(10)
-                                    Spacer()
-                                }
+                                BubbleView(text: message.text, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
                             }
                         }
                     }
@@ -92,15 +92,72 @@ struct ChatView: View {
                         }
                     }
                 }
-            }
+            }.padding([.bottom, .trailing, .leading])
             
             HStack {
-                TextField("Plaintext", text: $plain_in).autocapitalization(.none)
-                Button("Encrypt & Send") {
+                TextField("Message", text: $plain_in)
+                    .autocapitalization(.none)
+                    .padding(11)
+                    .background(colorScheme == .dark ? .black : .white)
+                    .cornerRadius(17)
+                Button {
                     chatmodel.enc(plain: plain_in.lowercased())
-                }.disabled(chatmodel.code.count <= 0)
+                } label: {
+                    HStack(spacing: -2) {
+                        Image(systemName: "lock.fill")
+                        Image(systemName: "arrow.up.circle")
+                    }
+                    .padding(5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 17)
+                            .stroke(colorScheme == .dark ? .white : .black, lineWidth: 5)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 17))
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .font(.title)
+                }
+                .disabled(chatmodel.code.count <= 0)
             }
-        }.padding()
+            .padding()
+            .background(Color.gray.opacity(0.1))
+        }
+    }
+}
+
+struct BubbleView: View {
+    var text: String
+    var isFromCurrentUser: Bool
+    var maxWidthFactor: CGFloat = 0.8
+    var cornerRadius: CGFloat = 17
+    
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack {
+            if isFromCurrentUser {
+                Spacer()
+                Text(text)
+                    .padding(10)
+                    .background(.black)
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+//                    .background(
+//                        RoundedRectangle(cornerRadius: cornerRadius)
+//                            .stroke(colorScheme == .dark ? .white : .black, lineWidth: 5)
+//                    )
+//                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .trailing)
+                    
+            } else {
+                Text(text)
+                    .padding(10)
+                    .background(Color.gray.opacity(0.4))
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .cornerRadius(cornerRadius)
+                    .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .leading)
+                Spacer()
+            }
+        }
     }
 }
 
@@ -124,9 +181,10 @@ struct PopoverContent: View {
 }
 
 let sampleMessages = [
+    MessageDec(id: "123", date: Date(), text: "hi there mate hows it going wondering if you want to go to the park, alright, that automatically looks fine? great stuff", sender: "bob"),
     MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob"),
-    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob"),
-    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob")
+    MessageDec(id: "123", date: Date(), text: "hi there mate hows it going wondering if you want to go to the park, alright, that automatically looks fine? great stuff", sender: "steve"),
+    MessageDec(id: "123", date: Date(), text: "h", sender: "steve")
 ]
 
 struct ChatView_Previews: PreviewProvider {

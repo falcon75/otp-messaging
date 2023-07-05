@@ -61,6 +61,9 @@ struct MainView: View {
     private let db = Firestore.firestore()
     @State var chats: [Chat] = []
     private var debug: Bool
+    @State private var isDetailActive = false
+    
+    @Environment(\.colorScheme) var colorScheme
     
     init(debug: Bool = false) {
         self.debug = debug
@@ -190,47 +193,56 @@ struct MainView: View {
     var body: some View {
         NavigationView {
             VStack {
-                ZStack {
-                    HStack {
-                        Spacer()
-                        Text("One Time 🔒").fontWeight(.bold)
-                        Spacer()
+                HStack {
+                    Text("One Time Pad 🔒").font(.largeTitle).fontWeight(.bold)
+                    Spacer()
+                    NavigationLink {
+                        ShopView()
+                    } label: {
+                        Image(systemName: "star.circle").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
-                    HStack {
-                        Button {
-                            let defaults = UserDefaults.standard
-                            if let bundleIdentifier = Bundle.main.bundleIdentifier {
-                                defaults.removePersistentDomain(forName: bundleIdentifier)
-                            }
-                            defaults.synchronize()
-                        } label: {
-                            Image(systemName: "xmark.bin")
-                        }
-                        Spacer()
-                        NavigationLink {
-                            ShopView()
-                        } label: {
-                            Image(systemName: "star.circle")
-                        }
-                        Button {
-                            shareData()
-                        } label: {
-                            Image(systemName: "plus")
-                        }
+                    Button {
+                        shareData()
+                    } label: {
+                        Image(systemName: "plus").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
-                }
+                }.padding()
                 Spacer()
-                ForEach(debug ? sampleChats : chats) { chat in
-                    if let chatId = chat.id {
-                        NavigationLink(chatId, destination: ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))))
-                            .frame(width: 350, height: 90)
-                            .background(.gray)
-                            .foregroundColor(.white)
-                            .cornerRadius(20)
-                        Spacer()
-                    }
+                ScrollView {
+                    VStack {
+                        ForEach(debug ? sampleChats : chats) { chat in
+                            Button(action: {
+                                isDetailActive = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "person")
+                                        .font(.title)
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                        .padding()
+                                    Text("Steve Jobs").fontWeight(.bold)
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    Spacer()
+                                    Text(" 📖 " + String(0))
+                                        .fontWeight(.bold)
+                                        .padding()
+                                        .foregroundColor(1 <= 0 ? .red : .black)
+                                }
+                                .background(colorScheme == .dark ? Color.black : Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .fullScreenCover(isPresented: $isDetailActive) {
+                                ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat)))
+                            }
+                            NavigationLink {
+                                
+                            } label: {
+                                
+                            }
+                            Spacer()
+                        }
+                    }.padding()
                 }
-            }.padding()
+            }
         }
         .onOpenURL(perform: { url in
             handleSharedData(url: url)
