@@ -203,7 +203,11 @@ struct MainView: View {
                         Image(systemName: "star.circle").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .sheet(isPresented: $isShopActive) {
-                        ShopView()
+                        if #available(iOS 16.0, *) {
+                            ShopView().presentationDetents([.medium])
+                        } else {
+                            ShopView()
+                        }
                     }
                 }.padding()
                 ScrollView {
