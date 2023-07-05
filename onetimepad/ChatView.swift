@@ -50,7 +50,7 @@ struct ChatView: View {
                         Text(" 📖 " + String(chatmodel.code.count))
                             .fontWeight(.bold)
                             .padding()
-                            .foregroundColor(chatmodel.code.count <= 0 ? .red : .black)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -94,7 +94,7 @@ struct ChatView: View {
                 }
             }.padding([.bottom, .trailing, .leading])
             
-            HStack {
+            HStack(spacing: 12) {
                 TextField("Message", text: $plain_in)
                     .autocapitalization(.none)
                     .padding(11)
@@ -102,6 +102,7 @@ struct ChatView: View {
                     .cornerRadius(17)
                 Button {
                     chatmodel.enc(plain: plain_in.lowercased())
+                    plain_in = ""
                 } label: {
                     HStack(spacing: -2) {
                         Image(systemName: "lock.fill")

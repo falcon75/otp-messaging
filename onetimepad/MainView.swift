@@ -62,6 +62,7 @@ struct MainView: View {
     @State var chats: [Chat] = []
     private var debug: Bool
     @State private var isDetailActive = false
+    @State private var isShopActive = false
     
     @Environment(\.colorScheme) var colorScheme
     
@@ -153,7 +154,7 @@ struct MainView: View {
         }
 
         let temporaryDirectory = FileManager.default.temporaryDirectory
-        let fileURL = temporaryDirectory.appendingPathComponent("Codebook 🔒.json")
+        let fileURL = temporaryDirectory.appendingPathComponent("Secret Pad 🔒.json")
 
         do {
             try data.write(to: fileURL)
@@ -196,20 +197,39 @@ struct MainView: View {
                 HStack {
                     Text("One Time Pad 🔒").font(.largeTitle).fontWeight(.bold)
                     Spacer()
-                    NavigationLink {
-                        ShopView()
+                    Button {
+                        isShopActive = true
                     } label: {
                         Image(systemName: "star.circle").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
-                    Button {
-                        shareData()
-                    } label: {
-                        Image(systemName: "plus").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                    .sheet(isPresented: $isShopActive) {
+                        ShopView()
                     }
                 }.padding()
-                Spacer()
                 ScrollView {
                     VStack {
+                        Button {
+                            shareData()
+                        } label: {
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "square.and.arrow.up").font(.title2).padding().foregroundColor(colorScheme == .dark ? .white : .black)
+                                    Text("Share Pad").font(.title2).foregroundColor(colorScheme == .dark ? .white : .black)
+                                    Image(systemName: "wifi").font(.title2).padding().foregroundColor(colorScheme == .dark ? .white : .black)
+                                    Spacer()
+                                }
+                                Text("Tap and use AirDrop to share the secret pad to someone locally.").foregroundColor(colorScheme == .dark ? .white : .black).multilineTextAlignment(.leading).padding([.bottom], 5)
+                            }
+                            .padding()
+                            .background(.gray.opacity(colorScheme == .dark ? 0.15 : 0.1))
+                            .background(
+                                RoundedRectangle(cornerRadius: 17)
+                                    .stroke(.gray.opacity(0.3), lineWidth: 7)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 17))
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                        }
                         ForEach(debug ? sampleChats : chats) { chat in
                             Button(action: {
                                 isDetailActive = true
@@ -225,7 +245,7 @@ struct MainView: View {
                                     Text(" 📖 " + String(0))
                                         .fontWeight(.bold)
                                         .padding()
-                                        .foregroundColor(1 <= 0 ? .red : .black)
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
                                 }
                                 .background(colorScheme == .dark ? Color.black : Color.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -233,15 +253,22 @@ struct MainView: View {
                             .fullScreenCover(isPresented: $isDetailActive) {
                                 ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat)))
                             }
-                            NavigationLink {
-                                
-                            } label: {
-                                
-                            }
                             Spacer()
                         }
                     }.padding()
                 }
+                HStack {
+                    Button {
+                        let defaults = UserDefaults.standard
+                        if let bundleIdentifier = Bundle.main.bundleIdentifier {
+                            defaults.removePersistentDomain(forName: bundleIdentifier)
+                        }
+                        defaults.synchronize()
+                    } label: {
+                        Image(systemName: "xmark.bin").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                    }
+                    Spacer()
+                }.padding()
             }
         }
         .onOpenURL(perform: { url in
