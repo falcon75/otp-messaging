@@ -28,6 +28,7 @@ struct MessageDec: Codable, Equatable, Identifiable {
 }
 
 struct ChatData: Codable {
+    var name: String
     var codebook: [Int]
     var messages: [MessageDec]
 }
@@ -61,7 +62,7 @@ struct MainView: View {
     private let db = Firestore.firestore()
     @State var chats: [Chat] = []
     private var debug: Bool
-    @State private var isDetailActive = false
+    @State private var isShowingDetail = false
     @State private var isShopActive = false
     
     @Environment(\.colorScheme) var colorScheme
@@ -124,7 +125,7 @@ struct MainView: View {
                                 print(addedDocument.data())
                                 return
                             }
-                            let chatData = ChatData(codebook: sc.codebook, messages: [])
+                            let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
                             ChatStore.shared.storeChat(uid: otherUser(chat: chat), chatData: chatData)
                         }
                     }
@@ -181,7 +182,7 @@ struct MainView: View {
             
             do {
                 let _ = try db.collection("chats").addDocument(from: Chat(members: [sc.id, user.uid]))
-                let chatData = ChatData(codebook: sc.codebook, messages: [])
+                let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
                 ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             } catch {
                 print(error)
@@ -200,7 +201,7 @@ struct MainView: View {
                     Button {
                         isShopActive = true
                     } label: {
-                        Image(systemName: "star.circle").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                        Image(systemName: "sparkles").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .sheet(isPresented: $isShopActive) {
                         if #available(iOS 16.0, *) {
@@ -236,7 +237,7 @@ struct MainView: View {
                         }
                         ForEach(debug ? sampleChats : chats) { chat in
                             Button(action: {
-                                isDetailActive = true
+                                isShowingDetail = true
                             }) {
                                 HStack {
                                     Image(systemName: "person")
@@ -254,9 +255,11 @@ struct MainView: View {
                                 .background(colorScheme == .dark ? Color.black : Color.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
-                            .fullScreenCover(isPresented: $isDetailActive) {
-                                ChatView(chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat)))
-                            }
+                            .background(
+                                NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))), isActive: $isShowingDetail) {
+                                    EmptyView()
+                                }
+                            )
                             Spacer()
                         }
                     }.padding()
@@ -281,6 +284,8 @@ struct MainView: View {
         .onChange(of: userManager.currentUser) { newUser in
             attach()
         }
+//        .navigationBarHidden(true)
+        
     }
 }
 

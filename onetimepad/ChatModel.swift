@@ -20,7 +20,7 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
 class ChatModel: ObservableObject {
     private let db = Firestore.firestore()
     private var chat: Chat
-    private var otherUID: String
+    var otherUID: String
     
     let a_to_n = ["a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10, "l": 11, "m": 12, "n": 13, "o": 14, "p": 15, "q": 16, "r": 17, "s": 18, "t": 19, "u": 20, "v": 21, "w": 22, "x": 23, "y": 24, "z": 25, " ": 26]
     let n_to_a = [0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h", 8: "i", 9: "j", 10: "k", 11: "l", 12: "m", 13: "n", 14: "o", 15: "p", 16: "q", 17: "r", 18: "s", 19: "t", 20: "u", 21: "v", 22: "w", 23: "x", 24: "y", 25: "z", 26: " "]
@@ -29,6 +29,11 @@ class ChatModel: ObservableObject {
     @Published var error = false // error indicator
     @Published var messages: [Message] = []
     @Published var messagesDec: [MessageDec] = []
+    @Published var name: String = "" {
+        didSet {
+            ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
+        }
+    }
     
     init(chat: Chat, otherUID: String) {
         self.chat = chat
@@ -36,6 +41,7 @@ class ChatModel: ObservableObject {
         if let c = ChatStore.shared.getChat(for: otherUID) {
             self.code = c.codebook
             self.messagesDec = c.messages
+            self.name = c.name
         } else {
             self.code = []
         }
@@ -96,7 +102,7 @@ class ChatModel: ObservableObject {
                     
                     self.code = Array(self.code[cipher.count...])
                     self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: plaintext, sender: msg.sender))
-                    ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(codebook: self.code, messages: self.messagesDec))
+                    ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(name: self.name, codebook: self.code, messages: self.messagesDec))
                 }
             }
     }
@@ -141,6 +147,6 @@ class ChatModel: ObservableObject {
         } catch {
             print(error)
         }
-        ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(codebook: code, messages: messagesDec))
+        ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
     }
 }

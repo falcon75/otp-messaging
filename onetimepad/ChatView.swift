@@ -12,14 +12,13 @@ struct ChatView: View {
     
     @StateObject var chatmodel: ChatModel
     @State var plain_in: String = ""
-    @State var plain_out: String = ""
-    @State var codebookExpanded = false
-    @State var ciphersExpanded = false
     @State private var isPopoverPresented = false
-    @State private var scrollToEnd = false
+    @Binding var isShowingDetail: Bool
     private var debug: Bool
+    static var previewBinding: Binding<Bool> = .constant(false)
     
-    init (chatmodel: ChatModel, debug: Bool = false) {
+    init (isShowingDetail: Binding<Bool>, chatmodel: ChatModel, debug: Bool = false) {
+        _isShowingDetail = isShowingDetail
         self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
@@ -44,7 +43,8 @@ struct ChatView: View {
                             .font(.title)
                             .foregroundColor(colorScheme == .dark ? .white : .black)
                             .padding()
-                        Text("Steve Jobs").fontWeight(.bold)
+                        Text(debug ? "Steve Jobs" : chatmodel.name).fontWeight(.bold).lineLimit(1)
+                            .truncationMode(.tail)
                             .foregroundColor(colorScheme == .dark ? .white : .black)
                         Spacer()
                         Text(" 📖 " + String(chatmodel.code.count))
@@ -55,15 +55,19 @@ struct ChatView: View {
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .popover(isPresented: $isPopoverPresented, arrowEdge: .top) {
-                    PopoverContent()
+                .sheet(isPresented: $isPopoverPresented) {
+                    if #available(iOS 16.0, *) {
+                        PopoverContent(chatModel: chatmodel).presentationDetents([.medium])
+                    } else {
+                        PopoverContent(chatModel: chatmodel)
+                    }
                 }
             }
             .padding()
             .background(Color.gray.opacity(0.1))
             
             
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
                     LazyVStack(spacing: 5) {
                         ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
@@ -76,23 +80,13 @@ struct ChatView: View {
                         }
                     }
                     .onChange(of: chatmodel.messagesDec) { _ in
-                        scrollToEnd = true
+                        withAnimation { scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1) }
                     }
                     .onAppear {
-                        scrollToEnd = true
-                    }
-                    .onReceive(chatmodel.objectWillChange) { _ in
-                        if scrollToEnd {
-                            DispatchQueue.main.async {
-                                withAnimation {
-                                    scrollViewProxy.scrollTo(chatmodel.messagesDec.last?.id, anchor: .bottom)
-                                }
-                                scrollToEnd = false
-                            }
-                        }
+                        scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1)
                     }
                 }
-            }.padding([.bottom, .trailing, .leading])
+            }.padding([.trailing, .leading])
             
             HStack(spacing: 12) {
                 TextField("Message", text: $plain_in)
@@ -122,7 +116,7 @@ struct ChatView: View {
             }
             .padding()
             .background(Color.gray.opacity(0.1))
-        }
+        }.navigationBarHidden(true)
     }
 }
 
@@ -164,11 +158,38 @@ struct BubbleView: View {
 }
 
 struct PopoverContent: View {
+    @State var chatModel: ChatModel
+    
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.presentationMode) var presentationMode
+    
     var body: some View {
         VStack {
-            Text("Chat Options")
-        }
-        .padding()
+            HStack {
+                Spacer()
+                Button {
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                }
+            }.padding()
+            Image(systemName: "person")
+                .font(.largeTitle)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .frame(width: 150, height: 150)
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 17))
+            HStack {
+                TextField("Name", text: $chatModel.name)
+                    .truncationMode(.tail)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 17))
+            }
+        }.padding()
+        Spacer()
     }
 }
 
@@ -181,6 +202,6 @@ let sampleMessages = [
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
+        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
     }
 }
