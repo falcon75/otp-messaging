@@ -115,9 +115,10 @@ struct ChatView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .opacity(plain_in == "" ? 0.5 : 1.0)
                     .font(.title)
                 }
-                .disabled(chatmodel.code.count <= 0)
+                .disabled(plain_in == "")
             }
             .padding()
             .background(Color.gray.opacity(0.1))
@@ -165,17 +166,7 @@ struct BubbleView: View {
 struct PopoverContent: View {
     var body: some View {
         VStack {
-            HStack {
-                Text("📖")
-                    .font(.system(size: 53))
-                    .padding()
-                Text("Codebook")
-                    .font(.title)
-            }
-            
-            Spacer()
-            Text("Description of how to generate codebook")
-            Spacer()
+            Text("Chat Options")
         }
         .padding()
     }
