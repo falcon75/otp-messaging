@@ -64,6 +64,7 @@ struct MainView: View {
     private var debug: Bool
     @State private var isShowingDetail = false
     @State private var isShopActive = false
+    @State private var isSettingsActive = false
     
     @Environment(\.colorScheme) var colorScheme
     
@@ -204,78 +205,95 @@ struct MainView: View {
                         Image(systemName: "sparkles").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .sheet(isPresented: $isShopActive) {
-                        if #available(iOS 16.0, *) {
-                            ShopView().presentationDetents([.medium])
-                        } else {
-                            ShopView()
-                        }
+                        ShopView().presentationDetents([.medium])
                     }
                 }.padding()
-                ScrollView {
+                if (debug ? sampleChats : chats).count > 0 {
+                    ScrollView {
+                        VStack {
+                            Divider()
+                            ForEach(debug ? sampleChats : chats) { chat in
+                                Button(action: {
+                                    isShowingDetail = true
+                                }) {
+                                    HStack(spacing: 12) {
+                                        Image("samplePfp")
+                                            .resizable()
+                                            .aspectRatio(1, contentMode: .fit)
+                                            .frame(width: 70, height: 70)
+                                            .clipShape(RoundedRectangle(cornerRadius: 17))
+                                        VStack(spacing: 5) {
+                                            HStack {
+                                                Text("Steve Jobs").fontWeight(.bold).font(.title3)
+                                                Spacer()
+                                            }
+                                            HStack(spacing: 3) {
+                                                Image(systemName: "lock")
+                                                Text("HUSHhdbbjhdhHJHJ")
+                                                    .lineLimit(1)
+                                                    .truncationMode(.tail)
+                                                Spacer()
+                                            }.font(.callout)
+                                        }
+                                        Spacer()
+                                        VStack(alignment: .leading, spacing: 5) {
+                                            HStack {
+                                                Text("🕰️ 12:06")
+                                            }
+                                            HStack {
+                                                Text("📖 1000")
+                                            }
+                                        }.font(.callout)
+                                        
+                                    }
+                                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    .background(colorScheme == .dark ? Color.black : Color.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                                .background(
+                                    NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))), isActive: $isShowingDetail) {
+                                        EmptyView()
+                                    }
+                                )
+                                Spacer()
+                                Divider()
+                            }
+                        }.padding()
+                    }
+                } else {
                     VStack {
-                        Button {
-                            shareData()
-                        } label: {
-                            VStack {
-                                HStack {
-                                    Spacer()
-                                    Image(systemName: "square.and.arrow.up").font(.title2).padding().foregroundColor(colorScheme == .dark ? .white : .black)
-                                    Text("Share Pad").font(.title2).foregroundColor(colorScheme == .dark ? .white : .black)
-                                    Image(systemName: "wifi").font(.title2).padding().foregroundColor(colorScheme == .dark ? .white : .black)
-                                    Spacer()
-                                }
-                                Text("Tap and use AirDrop to share the secret pad to someone locally.").foregroundColor(colorScheme == .dark ? .white : .black).multilineTextAlignment(.leading).padding([.bottom], 5)
-                            }
-                            .padding()
-                            .background(.gray.opacity(colorScheme == .dark ? 0.15 : 0.1))
-                            .background(
-                                RoundedRectangle(cornerRadius: 17)
-                                    .stroke(.gray.opacity(0.3), lineWidth: 7)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 17))
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                        }
-                        ForEach(debug ? sampleChats : chats) { chat in
-                            Button(action: {
-                                isShowingDetail = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "person")
-                                        .font(.title)
-                                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                                        .padding()
-                                    Text("Steve Jobs").fontWeight(.bold)
-                                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                                    Spacer()
-                                    Text(" 📖 " + String(0))
-                                        .fontWeight(.bold)
-                                        .padding()
-                                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                                }
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                            }
-                            .background(
-                                NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))), isActive: $isShowingDetail) {
-                                    EmptyView()
-                                }
-                            )
+                        Spacer()
+                        Text("No Chats").foregroundColor(.gray.opacity(0.8))
+                        Spacer()
+                    }
+                }
+                HStack(spacing: 5) {
+                    Button {
+                        shareData()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "plus").font(.title)
                             Spacer()
                         }
-                    }.padding()
-                }
-                HStack {
-                    Button {
-                        let defaults = UserDefaults.standard
-                        if let bundleIdentifier = Bundle.main.bundleIdentifier {
-                            defaults.removePersistentDomain(forName: bundleIdentifier)
-                        }
-                        defaults.synchronize()
-                    } label: {
-                        Image(systemName: "xmark.bin").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                        .padding()
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                        .background(colorScheme == .dark ? .white : .black)
+                        .clipShape(RoundedRectangle(cornerRadius: 17))
                     }
-                    Spacer()
-                }.padding()
+                    Button {
+                        isSettingsActive = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.title)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .padding(8)
+                    }
+                    .sheet(isPresented: $isSettingsActive) {
+                        SettingsView().presentationDetents([.medium])
+                    }
+                }
+                .padding()
             }
         }
         .onOpenURL(perform: { url in
@@ -284,12 +302,53 @@ struct MainView: View {
         .onChange(of: userManager.currentUser) { newUser in
             attach()
         }
-//        .navigationBarHidden(true)
-        
     }
 }
 
-let sampleChats = [
+struct SettingsView: View {
+    @State var settingPasscode: Bool = false
+    @State var settingShareInfo: Bool = true
+    
+    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Button {
+                    let defaults = UserDefaults.standard
+                    if let bundleIdentifier = Bundle.main.bundleIdentifier {
+                        defaults.removePersistentDomain(forName: bundleIdentifier)
+                    }
+                    defaults.synchronize()
+                } label: {
+                    Image(systemName: "xmark.bin").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                }
+                Spacer()
+                Button {
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                }
+            }
+            Spacer()
+            Divider()
+            HStack {
+                Toggle("Lock app with passcode / FaceId", isOn: $settingPasscode)
+                    .padding(.vertical, 8)
+            }
+            Divider()
+            HStack {
+                Toggle("Show guide when sharing pad", isOn: $settingShareInfo)
+                    .padding(.vertical, 8)
+            }
+            Divider()
+            Spacer()
+        }.padding()
+    }
+}
+
+let sampleChats: [Chat] = [
     Chat(id: "123", members: ["bob", "alice"]),
     Chat(id: "123", members: ["bob", "alice"]),
     Chat(id: "123", members: ["bob", "alice"])

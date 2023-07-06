@@ -39,28 +39,32 @@ struct ChatView: View {
                     isPopoverPresented = true
                 } label: {
                     HStack {
-                        Image(systemName: "person")
-                            .font(.title)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .padding()
-                        Text(debug ? "Steve Jobs" : chatmodel.name).fontWeight(.bold).lineLimit(1)
-                            .truncationMode(.tail)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                        Image("samplePfp")
+                            .resizable()
+                            .aspectRatio(1, contentMode: .fit)
+                            .frame(width: 50, height: 50)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(5)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(debug ? "Steve Jobs" : chatmodel.name).fontWeight(.bold).lineLimit(1)
+                                .truncationMode(.tail)
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                            Text("📖 " + String(chatmodel.code.count))
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                        }
+                        
                         Spacer()
-                        Text(" 📖 " + String(chatmodel.code.count))
-                            .fontWeight(.bold)
+                        Image(systemName: "square.and.pencil")
+                            .font(.title2)
                             .padding()
                             .foregroundColor(colorScheme == .dark ? .white : .black)
+                        
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: 17))
                 }
                 .sheet(isPresented: $isPopoverPresented) {
-                    if #available(iOS 16.0, *) {
-                        PopoverContent(chatModel: chatmodel).presentationDetents([.medium])
-                    } else {
-                        PopoverContent(chatModel: chatmodel)
-                    }
+                    PopoverContent(chatModel: chatmodel).presentationDetents([.medium])
                 }
             }
             .padding()
@@ -86,12 +90,12 @@ struct ChatView: View {
                         scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1)
                     }
                 }
-            }.padding([.trailing, .leading])
+            }.padding([.trailing, .leading], 5)
             
             HStack(spacing: 12) {
                 TextField("Message", text: $plain_in)
                     .autocapitalization(.none)
-                    .padding(11)
+                    .padding(12)
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
                 Button {
@@ -173,10 +177,11 @@ struct PopoverContent: View {
                     Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                 }
             }.padding()
-            Image(systemName: "person")
-                .font(.largeTitle)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
+            Image("samplePfp")
+                .resizable()
+                .aspectRatio(1, contentMode: .fit)
                 .frame(width: 150, height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 17))

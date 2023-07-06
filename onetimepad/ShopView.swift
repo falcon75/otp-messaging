@@ -24,7 +24,8 @@ struct ShopView: View {
                 } label: {
                     Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                 }
-            }.padding()
+            }
+            Spacer()
             Button {
                 premium = false
             } label: {
@@ -69,6 +70,9 @@ struct ShopView: View {
                             Text("Unlimited Messages")
                                 .foregroundColor(.white)
                                 .font(.body)
+                            Text("Unlock All Themes")
+                                .foregroundColor(.white)
+                                .font(.body)
                         }
                         Spacer()
                     }
@@ -79,9 +83,7 @@ struct ShopView: View {
                     Image(systemName: !premium ? "circle" : "checkmark.circle.fill").foregroundColor(colorScheme == .dark ? .black : .white).padding().offset(x: 140).font(.title)
                 }
             }
-        }
-        .padding()
-        .frame(height: UIScreen.main.bounds.height / 2)
+        }.padding()
     }
 }
 
