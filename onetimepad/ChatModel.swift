@@ -19,6 +19,10 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
 
 struct Chat: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
+    var latestMessage: String
+    var latestTime: Date
+    var newMessage: Bool
+    var typing: Bool
     var members: [String]
 }
 
@@ -76,9 +80,19 @@ class ChatModel: ObservableObject {
     @Published var error = false // error indicator
     @Published var messages: [Message] = []
     @Published var messagesDec: [MessageDec] = []
+    private var timer: Timer?
     @Published var name: String = "" {
         didSet {
             ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
+        }
+    }
+    @Published var messageText: String = "" {
+        didSet {
+            if !messageText.isEmpty {
+                writeTyping(typing: true)
+                timer?.invalidate()
+                timer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(timerExpired), userInfo: nil, repeats: false)
+            }
         }
     }
     
@@ -93,6 +107,26 @@ class ChatModel: ObservableObject {
             self.code = []
         }
         attach()
+    }
+    
+    @objc private func timerExpired() {
+        writeTyping(typing: false)
+        timer = nil
+    }
+    
+    func writeTyping(typing: Bool) {
+        guard let user = UserManager.shared.currentUser else {
+            print("No User")
+            return
+        }
+        let update: [String: Any] = ["typing": typing]
+        db.collection("chats").document(chat.id!).updateData(update) { error in
+            if let error = error {
+                print("Error updating document: \(error)")
+            } else {
+                print("New message status updated successfully")
+            }
+        }
     }
     
     func attach() {
@@ -189,11 +223,19 @@ class ChatModel: ObservableObject {
         
         do {
             let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg)
+            let update: [String: Any] = ["newMessage": true, "latestMessage": cipher, "latestTime": Date()]
+            db.collection("chats").document(chat.id!).updateData(update) { error in
+                if let error = error {
+                    print("Error updating document: \(error)")
+                } else {
+                    print("New message status updated successfully")
+                }
+            }
             code = Array(code[plain.count...])
             messagesDec.append(msgDec)
+            ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
         } catch {
             print(error)
         }
-        ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
     }
 }

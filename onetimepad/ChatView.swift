@@ -10,7 +10,6 @@ import SwiftUI
 
 struct ChatView: View {
     @StateObject var chatmodel: ChatModel
-    @State var messageText: String = ""
     @State private var isPopoverPresented = false
     @Binding var isShowingDetail: Bool
     private var debug: Bool
@@ -24,7 +23,7 @@ struct ChatView: View {
         self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
-
+    
     var body: some View {
         VStack {
             HStack(spacing: 14) {
@@ -86,14 +85,14 @@ struct ChatView: View {
                 }
             }.padding([.trailing, .leading], 5)
             HStack(spacing: 12) {
-                TextField("Message", text: $messageText)
+                TextField("Message", text: $chatmodel.messageText)
                     .autocapitalization(.none)
                     .padding(12)
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
                 Button {
-                    chatmodel.enc(plain: messageText.lowercased())
-                    messageText = ""
+                    chatmodel.enc(plain: chatmodel.messageText.lowercased())
+                    chatmodel.messageText = ""
                 } label: {
                     HStack(spacing: -2) {
                         Image(systemName: "lock.fill")
@@ -106,10 +105,10 @@ struct ChatView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .opacity(messageText == "" ? 0.5 : 1.0)
+                    .opacity(chatmodel.messageText == "" ? 0.5 : 1.0)
                     .font(.title)
                 }
-                .disabled(messageText == "")
+                .disabled(chatmodel.messageText == "")
             }
             .padding()
             .background(Color.gray.opacity(0.1))
@@ -200,6 +199,6 @@ let sampleMessages = [
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
+        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]), otherUID: "hi"), debug: true)
     }
 }

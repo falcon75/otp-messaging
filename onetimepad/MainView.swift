@@ -30,7 +30,6 @@ struct MainView: View {
             print("No User")
             return ""
         }
-        
         for mem in chat.members {
             if mem != user.uid {
                 return mem
@@ -125,6 +124,25 @@ struct MainView: View {
         ChatStore.shared.pendingSC = sc
     }
     
+    func formatDateString(date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        let currentDate = Date()
+        
+        if Calendar.current.isDateInToday(date) {
+            dateFormatter.dateFormat = "HH:mm"
+            return dateFormatter.string(from: date)
+        } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .month) {
+            dateFormatter.dateFormat = "E"
+            return dateFormatter.string(from: date)
+        } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .year) {
+            dateFormatter.dateFormat = "MMM"
+            return dateFormatter.string(from: date)
+        } else {
+            dateFormatter.dateFormat = "yyyy"
+            return dateFormatter.string(from: date)
+        }
+    }
+    
     private func handleSharedData(url: URL) {
         guard let user = userManager.currentUser else {
             print("No user")
@@ -136,7 +154,7 @@ struct MainView: View {
             let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
             
             do {
-                let _ = try db.collection("chats").addDocument(from: Chat(members: [sc.id, user.uid]))
+                let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestTime: Date(), newMessage: false, typing: false, members: [sc.id, user.uid]))
                 let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
                 ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             } catch {
@@ -183,16 +201,21 @@ struct MainView: View {
                                             }
                                             HStack(spacing: 3) {
                                                 Image(systemName: "lock")
-                                                Text("HUSHhdbbjhdhHJHJ")
+                                                Text(chat.latestMessage)
                                                     .lineLimit(1)
                                                     .truncationMode(.tail)
                                                 Spacer()
-                                            }.font(.callout)
+                                            }
+                                            .padding(5)
+                                            .font(.callout)
+                                            .foregroundColor(.white)
+                                            .background(.blue)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
                                         }
                                         Spacer()
                                         VStack(alignment: .leading, spacing: 5) {
                                             HStack {
-                                                Text("🕰️ 12:06")
+                                                Text("🕰️ " + formatDateString(date: chat.latestTime))
                                             }
                                             HStack {
                                                 Text("📖 1000")
@@ -303,9 +326,9 @@ struct SettingsView: View {
 }
 
 let sampleChats: [Chat] = [
-    Chat(id: "123", members: ["bob", "alice"]),
-    Chat(id: "123", members: ["bob", "alice"]),
-    Chat(id: "123", members: ["bob", "alice"])
+    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]),
+    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]),
+    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"])
 ]
 
 struct MainView_Previews: PreviewProvider {
