@@ -9,7 +9,6 @@ import SwiftUI
 
 
 struct ShopView: View {
-    
     @State var premium: Bool = false
     
     @Environment(\.presentationMode) var presentationMode

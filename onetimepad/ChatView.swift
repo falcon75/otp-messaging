@@ -9,25 +9,23 @@ import SwiftUI
 
 
 struct ChatView: View {
-    
     @StateObject var chatmodel: ChatModel
-    @State var plain_in: String = ""
+    @State var messageText: String = ""
     @State private var isPopoverPresented = false
     @Binding var isShowingDetail: Bool
     private var debug: Bool
     static var previewBinding: Binding<Bool> = .constant(false)
+    
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.presentationMode) var presentationMode
     
     init (isShowingDetail: Binding<Bool>, chatmodel: ChatModel, debug: Bool = false) {
         _isShowingDetail = isShowingDetail
         self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
-    
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
-        
         VStack {
             HStack(spacing: 14) {
                 Button {
@@ -52,25 +50,21 @@ struct ChatView: View {
                             Text("📖 " + String(chatmodel.code.count))
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
                         }
-                        
                         Spacer()
                         Image(systemName: "square.and.pencil")
                             .font(.title2)
                             .padding()
                             .foregroundColor(colorScheme == .dark ? .white : .black)
-                        
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                 }
                 .sheet(isPresented: $isPopoverPresented) {
-                    PopoverContent(chatModel: chatmodel).presentationDetents([.medium])
+                    ChatOptionsView(chatModel: chatmodel).presentationDetents([.medium])
                 }
             }
             .padding()
             .background(Color.gray.opacity(0.1))
-            
-            
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
                     LazyVStack(spacing: 5) {
@@ -91,16 +85,15 @@ struct ChatView: View {
                     }
                 }
             }.padding([.trailing, .leading], 5)
-            
             HStack(spacing: 12) {
-                TextField("Message", text: $plain_in)
+                TextField("Message", text: $messageText)
                     .autocapitalization(.none)
                     .padding(12)
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
                 Button {
-                    chatmodel.enc(plain: plain_in.lowercased())
-                    plain_in = ""
+                    chatmodel.enc(plain: messageText.lowercased())
+                    messageText = ""
                 } label: {
                     HStack(spacing: -2) {
                         Image(systemName: "lock.fill")
@@ -113,10 +106,10 @@ struct ChatView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .opacity(plain_in == "" ? 0.5 : 1.0)
+                    .opacity(messageText == "" ? 0.5 : 1.0)
                     .font(.title)
                 }
-                .disabled(plain_in == "")
+                .disabled(messageText == "")
             }
             .padding()
             .background(Color.gray.opacity(0.1))
@@ -161,7 +154,7 @@ struct BubbleView: View {
     }
 }
 
-struct PopoverContent: View {
+struct ChatOptionsView: View {
     @State var chatModel: ChatModel
     
     @Environment(\.colorScheme) var colorScheme

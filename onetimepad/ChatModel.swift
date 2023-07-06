@@ -17,6 +17,53 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
     var sender: String
 }
 
+struct Chat: Codable, Identifiable, Equatable, Hashable {
+    @DocumentID var id: String?
+    var members: [String]
+}
+
+struct ShareCodebook: Codable {
+    var id: String
+    var codebook: [Int]
+}
+
+struct MessageDec: Codable, Equatable, Identifiable {
+    var id: String
+    var date: Date
+    var text: String
+    var sender: String
+}
+
+struct ChatData: Codable {
+    var name: String
+    var codebook: [Int]
+    var messages: [MessageDec]
+}
+
+class ChatStore {
+    static let shared = ChatStore()
+    var pendingSC: ShareCodebook? = nil
+    
+    func storeChat(uid: String, chatData: ChatData) {
+        let jsonEncoder = JSONEncoder()
+        if let encoded = try? jsonEncoder.encode(chatData) {
+            let defaults = UserDefaults.standard
+            defaults.set(encoded, forKey: uid)
+        }
+    }
+    
+    func getChat(for uid: String) -> ChatData? {
+        let defaults = UserDefaults.standard
+        if let encoded = defaults.data(forKey: uid) {
+            let jsonDecoder = JSONDecoder()
+            if let decoded = try? jsonDecoder.decode(ChatData.self, from: encoded) {
+                return decoded
+            }
+        }
+        return nil
+    }
+}
+
 class ChatModel: ObservableObject {
     private let db = Firestore.firestore()
     private var chat: Chat
