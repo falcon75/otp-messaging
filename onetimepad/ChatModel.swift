@@ -20,10 +20,15 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
 struct Chat: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     var latestMessage: String
+    var latestSender: String
     var latestTime: Date
-    var newMessage: Bool
-    var typing: Bool
+    var typing: String
     var members: [String]
+    var newMessage: Bool?
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, latestMessage, latestSender, latestTime, typing, members
+    }
 }
 
 struct ShareCodebook: Codable {
@@ -91,7 +96,7 @@ class ChatModel: ObservableObject {
             if !messageText.isEmpty {
                 writeTyping(typing: true)
                 timer?.invalidate()
-                timer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(timerExpired), userInfo: nil, repeats: false)
+                timer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(timerExpired), userInfo: nil, repeats: false)
             }
         }
     }
@@ -119,7 +124,7 @@ class ChatModel: ObservableObject {
             print("No User")
             return
         }
-        let update: [String: Any] = ["typing": typing]
+        let update: [String: Any] = ["typing": typing ? user.uid : ""]
         db.collection("chats").document(chat.id!).updateData(update) { error in
             if let error = error {
                 print("Error updating document: \(error)")
@@ -128,6 +133,8 @@ class ChatModel: ObservableObject {
             }
         }
     }
+    
+    var justProcessed: [String] =  []
     
     func attach() {
         db.collection("chats")
@@ -151,6 +158,11 @@ class ChatModel: ObservableObject {
                         print(document.data())
                         return
                     }
+                    
+                    if self.justProcessed.contains(msg.id!) {
+                        continue
+                    }
+                    self.justProcessed.append(msg.id!)
                     
                     guard let user = UserManager.shared.currentUser else {
                         print("No User")
@@ -188,12 +200,6 @@ class ChatModel: ObservableObject {
             }
     }
     
-    func generate(n: Int) {
-        for _ in 0..<n {
-            code.append(Int.random(in: 0...26))
-        }
-    }
-    
     func enc(plain: String){
         var pointer = 0
         var cipher = ""
@@ -222,8 +228,8 @@ class ChatModel: ObservableObject {
         let msgDec = MessageDec(id: UUID().uuidString, date: date, text: plain, sender: user.uid)
         
         do {
-            let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg)
-            let update: [String: Any] = ["newMessage": true, "latestMessage": cipher, "latestTime": Date()]
+            let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg) // add message
+            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": cipher, "latestTime": Date()] // update chat
             db.collection("chats").document(chat.id!).updateData(update) { error in
                 if let error = error {
                     print("Error updating document: \(error)")
@@ -233,7 +239,7 @@ class ChatModel: ObservableObject {
             }
             code = Array(code[plain.count...])
             messagesDec.append(msgDec)
-            ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
+            ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec)) // add message local
         } catch {
             print(error)
         }

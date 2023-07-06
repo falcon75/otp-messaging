@@ -199,6 +199,6 @@ let sampleMessages = [
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]), otherUID: "hi"), debug: true)
+        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
     }
 }

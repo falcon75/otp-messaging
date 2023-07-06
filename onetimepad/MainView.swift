@@ -6,14 +6,11 @@
 //
 
 import SwiftUI
-import Firebase
-import FirebaseFirestoreSwift
 
 
 struct MainView: View {
     @ObservedObject private var userManager = UserManager.shared
-    private let db = Firestore.firestore()
-    @State var chats: [Chat] = []
+    @StateObject private var model = Model()
     private var debug: Bool
     @State private var isShowingDetail = false
     @State private var isShopActive = false
@@ -24,76 +21,6 @@ struct MainView: View {
     init(debug: Bool = false) {
         self.debug = debug
     }
-    
-    func otherUser(chat: Chat) -> String {
-        guard let user = UserManager.shared.currentUser else {
-            print("No User")
-            return ""
-        }
-        for mem in chat.members {
-            if mem != user.uid {
-                return mem
-            }
-            print("this shouldnt be possible, ensure")
-        }
-        return ""
-    }
-    
-    func attach () {
-        guard let user = userManager.currentUser else {
-            print("No user")
-            return
-        }
-        
-        db.collection("chats")
-            .whereField("members", arrayContains: user.uid)
-//            .order(by: "date", descending: false)
-            .addSnapshotListener { (snapshot, err) in
-                
-                if let err = err {
-                    print("Error: \(err)")
-                }
-                    
-                guard let snapshot = snapshot else {
-                    print("Snapshot nil")
-                    return
-                }
-                    
-                self.chats = snapshot.documents.compactMap { document in
-                    guard let chat = try? document.data(as: Chat.self) else {
-                        print("Error: could not cast to Msg")
-                        print(document.data())
-                        return nil
-                    }
-                    print(chat)
-                    return chat
-                }
-                
-                if let sc = ChatStore.shared.pendingSC {
-                    for change in snapshot.documentChanges {
-                        if change.type == .added {
-                            let addedDocument = change.document
-                            guard let chat = try? addedDocument.data(as: Chat.self) else {
-                                print("Error: could not cast to Msg")
-                                print(addedDocument.data())
-                                return
-                            }
-                            let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
-                            ChatStore.shared.storeChat(uid: otherUser(chat: chat), chatData: chatData)
-                        }
-                    }
-                }
-            }
-    }
-    
-    private func generate (n: Int) -> [Int] {
-        var codebook: [Int] = []
-        for _ in 0..<n {
-            codebook.append(Int.random(in: 0...26))
-        }
-        print(codebook)
-        return codebook
-    }
 
     private func shareData() {
         guard let user = userManager.currentUser else {
@@ -101,7 +28,7 @@ struct MainView: View {
             return
         }
         
-        let sc = ShareCodebook(id: user.uid, codebook: self.generate(n: 1000))
+        let sc = ShareCodebook(id: user.uid, codebook: model.generate(n: 1000))
         
         guard let data = try? JSONEncoder().encode(sc) else {
             print("Failed to encode data.")
@@ -124,47 +51,6 @@ struct MainView: View {
         ChatStore.shared.pendingSC = sc
     }
     
-    func formatDateString(date: Date) -> String {
-        let dateFormatter = DateFormatter()
-        let currentDate = Date()
-        
-        if Calendar.current.isDateInToday(date) {
-            dateFormatter.dateFormat = "HH:mm"
-            return dateFormatter.string(from: date)
-        } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .month) {
-            dateFormatter.dateFormat = "E"
-            return dateFormatter.string(from: date)
-        } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .year) {
-            dateFormatter.dateFormat = "MMM"
-            return dateFormatter.string(from: date)
-        } else {
-            dateFormatter.dateFormat = "yyyy"
-            return dateFormatter.string(from: date)
-        }
-    }
-    
-    private func handleSharedData(url: URL) {
-        guard let user = userManager.currentUser else {
-            print("No user")
-            return
-        }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
-            
-            do {
-                let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestTime: Date(), newMessage: false, typing: false, members: [sc.id, user.uid]))
-                let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
-                ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
-            } catch {
-                print(error)
-            }
-        } catch {
-            print("Failed to handle recieved codebook: \(error)")
-        }
-    }
-    
     var body: some View {
         NavigationView {
             VStack {
@@ -180,11 +66,11 @@ struct MainView: View {
                         ShopView().presentationDetents([.medium])
                     }
                 }.padding()
-                if (debug ? sampleChats : chats).count > 0 {
+                if (debug ? sampleChats : model.sortedChats).count > 0 {
                     ScrollView {
                         VStack {
                             Divider()
-                            ForEach(debug ? sampleChats : chats) { chat in
+                            ForEach(debug ? sampleChats : model.sortedChats) { chat in
                                 Button(action: {
                                     isShowingDetail = true
                                 }) {
@@ -199,18 +85,30 @@ struct MainView: View {
                                                 Text("Steve Jobs").fontWeight(.bold).font(.title3)
                                                 Spacer()
                                             }
-                                            HStack(spacing: 3) {
-                                                Image(systemName: "lock")
-                                                Text(chat.latestMessage)
-                                                    .lineLimit(1)
-                                                    .truncationMode(.tail)
-                                                Spacer()
+                                            if chat.newMessage ?? false {
+                                                HStack(spacing: 3) {
+                                                    Image(systemName: "lock")
+                                                    Text(chat.latestMessage)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
+                                                    Spacer()
+                                                }
+                                                .padding(5)
+                                                .font(.callout)
+                                                .foregroundColor(.white)
+                                                .background(.blue)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                            } else {
+                                                HStack(spacing: 3) {
+                                                    Text(chat.latestMessage)
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
+                                                    Spacer()
+                                                }
+                                                .padding(5)
+                                                .font(.callout)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                             }
-                                            .padding(5)
-                                            .font(.callout)
-                                            .foregroundColor(.white)
-                                            .background(.blue)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
                                         }
                                         Spacer()
                                         VStack(alignment: .leading, spacing: 5) {
@@ -228,7 +126,7 @@ struct MainView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
                                 .background(
-                                    NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: otherUser(chat: chat))), isActive: $isShowingDetail) {
+                                    NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: model.otherUser(chat: chat))), isActive: $isShowingDetail) {
                                         EmptyView()
                                     }
                                 )
@@ -274,10 +172,10 @@ struct MainView: View {
             }
         }
         .onOpenURL(perform: { url in
-            handleSharedData(url: url)
+            model.handleSharedData(url: url)
         })
         .onChange(of: userManager.currentUser) { newUser in
-            attach()
+            model.attach()
         }
     }
 }
@@ -325,10 +223,29 @@ struct SettingsView: View {
     }
 }
 
+func formatDateString(date: Date) -> String {
+    let dateFormatter = DateFormatter()
+    let currentDate = Date()
+    
+    if Calendar.current.isDateInToday(date) {
+        dateFormatter.dateFormat = "HH:mm"
+        return dateFormatter.string(from: date)
+    } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .month) {
+        dateFormatter.dateFormat = "E"
+        return dateFormatter.string(from: date)
+    } else if Calendar.current.isDate(date, equalTo: currentDate, toGranularity: .year) {
+        dateFormatter.dateFormat = "MMM"
+        return dateFormatter.string(from: date)
+    } else {
+        dateFormatter.dateFormat = "yyyy"
+        return dateFormatter.string(from: date)
+    }
+}
+
 let sampleChats: [Chat] = [
-    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]),
-    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"]),
-    Chat(id: "123", latestMessage: "hi", latestTime: Date(), newMessage: true, typing: true, members: ["bob", "alice"])
+    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"]),
+    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"]),
+    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"])
 ]
 
 struct MainView_Previews: PreviewProvider {

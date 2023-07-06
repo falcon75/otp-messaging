@@ -12,6 +12,7 @@
 		2202FD5B28AD7033007FD927 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD5A28AD7033007FD927 /* FirebaseAuth */; };
 		2202FD5D28AD7033007FD927 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD5C28AD7033007FD927 /* FirebaseFirestore */; };
 		2202FD6228AD7125007FD927 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD6128AD7125007FD927 /* FirebaseFirestoreSwift */; };
+		2242FA0B2A570408002A8153 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2242FA0A2A570408002A8153 /* Model.swift */; };
 		2247BA78288C2EF3005E25AE /* onetimepadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA77288C2EF3005E25AE /* onetimepadApp.swift */; };
 		2247BA7A288C2EF3005E25AE /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA79288C2EF3005E25AE /* ChatView.swift */; };
 		2247BA7C288C2EF5005E25AE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2247BA7B288C2EF5005E25AE /* Assets.xcassets */; };
@@ -23,6 +24,7 @@
 
 /* Begin PBXFileReference section */
 		2202FD5528AD6F6D007FD927 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		2242FA0A2A570408002A8153 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		2247BA74288C2EF3005E25AE /* onetimepad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = onetimepad.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2247BA77288C2EF3005E25AE /* onetimepadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onetimepadApp.swift; sourceTree = "<group>"; };
 		2247BA79288C2EF3005E25AE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 				2247BA77288C2EF3005E25AE /* onetimepadApp.swift */,
 				2247BA79288C2EF3005E25AE /* ChatView.swift */,
 				227B46382A5314D900712179 /* MainView.swift */,
+				2242FA0A2A570408002A8153 /* Model.swift */,
 				227B463A2A53183400712179 /* ShopView.swift */,
 				2247BA85288C369B005E25AE /* ChatModel.swift */,
 				2247BA7B288C2EF5005E25AE /* Assets.xcassets */,
@@ -175,6 +178,7 @@
 				2247BA7A288C2EF3005E25AE /* ChatView.swift in Sources */,
 				227B46392A5314D900712179 /* MainView.swift in Sources */,
 				2247BA86288C369B005E25AE /* ChatModel.swift in Sources */,
+				2242FA0B2A570408002A8153 /* Model.swift in Sources */,
 				227B463B2A53183400712179 /* ShopView.swift in Sources */,
 				2247BA78288C2EF3005E25AE /* onetimepadApp.swift in Sources */,
 			);
