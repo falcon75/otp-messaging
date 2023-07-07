@@ -6,20 +6,20 @@
 //
 
 import SwiftUI
+import UIKit
+import Photos
 
 
 struct ChatView: View {
+    @ObservedObject private var chatsStore = ChatsStore.shared
     @StateObject var chatmodel: ChatModel
     @State private var isPopoverPresented = false
-    @Binding var isShowingDetail: Bool
     private var debug: Bool
-    static var previewBinding: Binding<Bool> = .constant(false)
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
     
-    init (isShowingDetail: Binding<Bool>, chatmodel: ChatModel, debug: Bool = false) {
-        _isShowingDetail = isShowingDetail
+    init (chatmodel: ChatModel, debug: Bool = false) {
         self.debug = debug
         _chatmodel = StateObject(wrappedValue: chatmodel)
     }
@@ -36,17 +36,32 @@ struct ChatView: View {
                     isPopoverPresented = true
                 } label: {
                     HStack {
-                        Image("samplePfp")
-                            .resizable()
-                            .aspectRatio(1, contentMode: .fit)
-                            .frame(width: 50, height: 50)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(5)
+                        HStack {
+                            if let url = chatsStore.localChats[chatmodel.chat.id!]!.pfpUrl {
+                                if let uiImage = UIImage(contentsOfFile: url.path) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                } else {
+                                    Image("samplePfp")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                }
+                            } else {
+                                Image("samplePfp")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            }
+                        }
+                        .frame(width: 50, height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(5)
+                        
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(debug ? "Steve Jobs" : chatmodel.name).fontWeight(.bold).lineLimit(1)
+                            Text(chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").fontWeight(.bold).lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
-                            Text("📖 " + String(chatmodel.code.count))
+                            Text("📖 " + formatNumber(chatmodel.code.count))
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
                         }
                         Spacer()
@@ -59,7 +74,7 @@ struct ChatView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                 }
                 .sheet(isPresented: $isPopoverPresented) {
-                    ChatOptionsView(chatModel: chatmodel).presentationDetents([.medium])
+                    ChatOptionsView(chatModel: chatmodel, name: chatmodel.chat.name ?? "").presentationDetents([.medium])
                 }
             }
             .padding()
@@ -91,7 +106,7 @@ struct ChatView: View {
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
                 Button {
-                    chatmodel.enc(plain: chatmodel.messageText.lowercased())
+                    chatmodel.send(plain: chatmodel.messageText.lowercased())
                     chatmodel.messageText = ""
                 } label: {
                     HStack(spacing: -2) {
@@ -154,7 +169,11 @@ struct BubbleView: View {
 }
 
 struct ChatOptionsView: View {
+    @ObservedObject private var chatsStore = ChatsStore.shared
+    @State private var selectedImageURL: URL?
     @State var chatModel: ChatModel
+    @State var name: String
+    @State var showImagePicker: Bool = false
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
@@ -169,24 +188,54 @@ struct ChatOptionsView: View {
                     Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                 }
             }.padding()
-            Image("samplePfp")
-                .resizable()
-                .aspectRatio(1, contentMode: .fit)
+            Button {
+                showImagePicker = true
+            } label: {
+                HStack {
+                    if let url = chatsStore.localChats[chatModel.chat.id!]!.pfpUrl {
+                        if let uiImage = UIImage(contentsOfFile: url.path) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } else {
+                            Image("samplePfp")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        }
+                    } else {
+                        Image("samplePfp")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    }
+                }
                 .frame(width: 150, height: 150)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 17))
+            }
             HStack {
-                TextField("Name", text: $chatModel.name)
+                TextField("Name", text: $name)
                     .truncationMode(.tail)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                     .padding()
                     .background(Color.gray.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 17))
             }
-        }.padding()
-        Spacer()
+            Spacer()
+        }
+        .padding()
+        .onChange(of: name) { newValue in
+            chatsStore.localChats[chatModel.chat.id!]!.name = name
+            chatsStore.storeChatsDictionary()
+        }
+        .sheet(isPresented: $showImagePicker) {
+            ImageSelectionView(selectedImageURL: $selectedImageURL)
+        }
+        .onChange(of: selectedImageURL) { newValue in
+            chatsStore.localChats[chatModel.chat.id!]!.pfpUrl = selectedImageURL
+            chatsStore.storeChatsDictionary()
+        }
     }
 }
 
@@ -199,6 +248,64 @@ let sampleMessages = [
 
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatView(isShowingDetail: ChatView.previewBinding, chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"]), otherUID: "hi"), debug: true)
+        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"], name: "Steve Jobs"), otherUID: "bob"), debug: true)
+    }
+}
+
+struct ImageSelectionView: UIViewControllerRepresentable {
+    @Binding var selectedImageURL: URL?
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.sourceType = .photoLibrary
+        imagePickerController.delegate = context.coordinator
+        return imagePickerController
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
+        // No need for update implementation
+    }
+
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(parent: self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: ImageSelectionView
+
+        init(parent: ImageSelectionView) {
+            self.parent = parent
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                if let imageURL = saveImageToDocumentDirectory(image: image) {
+                    parent.selectedImageURL = imageURL
+                }
+            }
+
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+
+        func saveImageToDocumentDirectory(image: UIImage) -> URL? {
+            guard let data = image.jpegData(compressionQuality: 1.0) else {
+                return nil
+            }
+
+            let uniqueIdentifier = UUID().uuidString
+            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            let fileURL = documentsDirectory?.appendingPathComponent("\(uniqueIdentifier).jpg")
+            do {
+                try data.write(to: fileURL!)
+                return fileURL
+            } catch {
+                print("Error saving image: \(error)")
+                return nil
+            }
+        }
     }
 }

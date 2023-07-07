@@ -9,12 +9,12 @@ import SwiftUI
 
 
 struct MainView: View {
+    @StateObject private var chatsStore = ChatsStore.shared
     @ObservedObject private var userManager = UserManager.shared
     @StateObject private var model = Model()
-    private var debug: Bool
-    @State private var isShowingDetail = false
     @State private var isShopActive = false
     @State private var isSettingsActive = false
+    private var debug: Bool
     
     @Environment(\.colorScheme) var colorScheme
     
@@ -66,23 +66,41 @@ struct MainView: View {
                         ShopView().presentationDetents([.medium])
                     }
                 }.padding()
-                if (debug ? sampleChats : model.sortedChats).count > 0 {
+                if (debug ? sampleChats : ChatsStore.shared.sortedChats).count > 0 {
                     ScrollView {
                         VStack {
                             Divider()
-                            ForEach(debug ? sampleChats : model.sortedChats) { chat in
-                                Button(action: {
-                                    isShowingDetail = true
-                                }) {
-                                    HStack(spacing: 12) {
-                                        Image("samplePfp")
-                                            .resizable()
-                                            .aspectRatio(1, contentMode: .fit)
-                                            .frame(width: 70, height: 70)
-                                            .clipShape(RoundedRectangle(cornerRadius: 17))
+                            ForEach(debug ? sampleChats : ChatsStore.shared.sortedChats) { chat in
+                                NavigationLink {
+                                    ChatView(chatmodel: ChatModel(chat: chat, otherUID: model.otherUser(chat: chat)))
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        HStack {
+                                            if let url = chatsStore.localChats[chat.id!]!.pfpUrl {
+                                                if let uiImage = UIImage(contentsOfFile: url.path) {
+                                                    Image(uiImage: uiImage)
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                } else {
+                                                    Image("samplePfp")
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                }
+                                            } else {
+                                                Image("samplePfp")
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                            }
+                                        }
+                                        .frame(width: 70, height: 70)
+                                        .clipShape(RoundedRectangle(cornerRadius: 17))
                                         VStack(spacing: 5) {
                                             HStack {
-                                                Text("Steve Jobs").fontWeight(.bold).font(.title3)
+                                                Text(chat.name ?? "")
+                                                    .fontWeight(.bold)
+                                                    .font(.title3)
+                                                    .lineLimit(1)
+                                                    .truncationMode(.tail)
                                                 Spacer()
                                             }
                                             if chat.newMessage ?? false {
@@ -100,6 +118,7 @@ struct MainView: View {
                                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                             } else {
                                                 HStack(spacing: 3) {
+                                                    Image(systemName: "lock.open")
                                                     Text(chat.latestMessage)
                                                         .lineLimit(1)
                                                         .truncationMode(.tail)
@@ -111,12 +130,16 @@ struct MainView: View {
                                             }
                                         }
                                         Spacer()
-                                        VStack(alignment: .leading, spacing: 5) {
+                                        VStack(alignment: .leading, spacing: 10) {
                                             HStack {
                                                 Text("🕰️ " + formatDateString(date: chat.latestTime))
                                             }
                                             HStack {
-                                                Text("📖 1000")
+                                                if let padLength = chat.padLength {
+                                                    Text("📖 " + formatNumber(padLength))
+                                                } else {
+                                                    Text("📖 ?")
+                                                }
                                             }
                                         }.font(.callout)
                                         
@@ -125,11 +148,6 @@ struct MainView: View {
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
-                                .background(
-                                    NavigationLink(destination: ChatView(isShowingDetail: $isShowingDetail, chatmodel: ChatModel(chat: chat, otherUID: model.otherUser(chat: chat))), isActive: $isShowingDetail) {
-                                        EmptyView()
-                                    }
-                                )
                                 Spacer()
                                 Divider()
                             }
@@ -158,6 +176,7 @@ struct MainView: View {
                     }
                     Button {
                         isSettingsActive = true
+                        print(chatsStore.localChats)
                     } label: {
                         Image(systemName: "slider.horizontal.3")
                             .font(.title)
@@ -243,10 +262,38 @@ func formatDateString(date: Date) -> String {
 }
 
 let sampleChats: [Chat] = [
-    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"]),
-    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"]),
-    Chat(id: "123", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"])
+    Chat(id: "1", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve Woz"),
+    Chat(id: "2", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve J"),
+    Chat(id: "3", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve Jobsworth the Third")
 ]
+
+func formatNumber(_ number: Int) -> String {
+    let sign = (number < 0) ? "-" : ""
+    let num = abs(number)
+    
+    let numberFormatter = NumberFormatter()
+    numberFormatter.numberStyle = .decimal
+    numberFormatter.minimumSignificantDigits = 1
+    numberFormatter.maximumSignificantDigits = 3
+    
+    switch num {
+    case 0..<1_000:
+        return "\(sign)\(numberFormatter.string(from: NSNumber(value: num))!)"
+    case 1_000..<1_000_000:
+        let thousands = num / 1_000
+        return "\(sign)\(numberFormatter.string(from: NSNumber(value: thousands))!)k"
+    case 1_000_000..<1_000_000_000:
+        let millions = num / 1_000_000
+        return "\(sign)\(numberFormatter.string(from: NSNumber(value: millions))!)M"
+    case 1_000_000_000..<1_000_000_000_000:
+        let billions = num / 1_000_000_000
+        return "\(sign)\(numberFormatter.string(from: NSNumber(value: billions))!)B"
+    default:
+        let trillions = num / 1_000_000_000_000
+        return "\(sign)\(numberFormatter.string(from: NSNumber(value: trillions))!)T"
+    }
+}
+
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {

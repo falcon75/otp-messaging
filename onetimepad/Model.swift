@@ -10,10 +10,15 @@ import Firebase
 import FirebaseFirestoreSwift
 
 
-
-
-class ChatsStore {
+class ChatsStore: ObservableObject {
     static let shared = ChatsStore()
+    @Published var localChats: [String: Chat] = [:] {
+        didSet {
+            sortedChats = Array(localChats.values).sorted(by: { $0.latestTime < $1.latestTime })
+        }
+    }
+    private var chats: [Chat] = []
+    @Published var sortedChats: [Chat] = []
     struct EncodedChat: Codable, Identifiable, Equatable, Hashable {
         var id: String?
         var latestMessage: String
@@ -22,12 +27,16 @@ class ChatsStore {
         var typing: String
         var members: [String]
         var newMessage: Bool?
+        var name: String?
+        var padLength: Int?
+        var pfpUrl: URL?
     }
     
-    func storeChatsDictionary(_ dictionary: [String: Chat]) {
+    func storeChatsDictionary() {
+        print(self.localChats)
         do {
-            let encodedDictionary = dictionary.mapValues { chat -> EncodedChat in
-                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members)
+            let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
+                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl)
             }
             
             let encoder = JSONEncoder()
@@ -38,9 +47,9 @@ class ChatsStore {
         }
     }
 
-    func retrieveChatsDictionary() -> [String: Chat]? {
+    func retrieveChatsDictionary() {
         guard let userData = UserDefaults.standard.data(forKey: "LocalChatsDictionary") else {
-            return nil
+            return
         }
         
         do {
@@ -48,37 +57,26 @@ class ChatsStore {
             let encodedDictionary = try decoder.decode([String: EncodedChat].self, from: userData)
             
             let decodedDictionary = encodedDictionary.mapValues { encodedChat -> Chat in
-                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members)
+                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl)
             }
-            
-            return decodedDictionary
+            localChats = decodedDictionary
         } catch {
             print("Error retrieving chats dictionary: \(error)")
-            return nil
+            return
         }
-    }
-    
-    func updateChatsDictionary(uid: String, chat: Chat) {
-        var chatsDictionary = retrieveChatsDictionary() ?? [:]
-        chatsDictionary[uid] = chat
+        print(self.localChats)
     }
 }
 
 
 class Model: ObservableObject {
+    private var chatsStore = ChatsStore.shared
     private var userManager = UserManager.shared
     private let db = Firestore.firestore()
-    private var localChats: [String: Chat] = [:] {
-        didSet {
-            sortedChats = Array(localChats.values).sorted(by: { $0.latestTime < $1.latestTime })
-        }
-    }
     private var chats: [Chat] = []
-    @Published var sortedChats: [Chat] = []
-    
     
     init() {
-        localChats = ChatsStore.shared.retrieveChatsDictionary() ?? [:]
+        chatsStore.retrieveChatsDictionary()
     }
     
     func otherUser(chat: Chat) -> String {
@@ -134,7 +132,6 @@ class Model: ObservableObject {
         
         db.collection("chats")
             .whereField("members", arrayContains: user.uid)
-//            .order(by: "date", descending: false)
             .addSnapshotListener { (snapshot, err) in
                 
                 if let err = err {
@@ -153,13 +150,19 @@ class Model: ObservableObject {
                         return nil
                     }
                     guard let chatId = chat.id else { return nil}
-                    if self.localChats[chatId] == nil {
-                        self.localChats[chatId] = chat
-                        ChatsStore.shared.storeChatsDictionary(self.localChats)
-                    } else {
-                        let new = self.localChats[chatId]!.latestTime != chat.latestTime
-                        self.localChats[chatId]! = chat
-                        self.localChats[chatId]!.newMessage = new
+                    if self.chatsStore.localChats[chatId] == nil { // new chat not in chatsStore, add
+                        self.chatsStore.localChats[chatId] = chat
+                        self.chatsStore.storeChatsDictionary()
+                    } else { // update chat, excluding local properties
+                        let pl = self.chatsStore.localChats[chatId]!.padLength
+                        let name = self.chatsStore.localChats[chatId]!.name
+                        let new = self.chatsStore.localChats[chatId]!.latestTime != chat.latestTime
+                        let url = self.chatsStore.localChats[chatId]!.pfpUrl
+                        self.chatsStore.localChats[chatId]! = chat
+                        self.chatsStore.localChats[chatId]!.newMessage = new
+                        self.chatsStore.localChats[chatId]!.name = name
+                        self.chatsStore.localChats[chatId]!.padLength = pl
+                        self.chatsStore.localChats[chatId]!.pfpUrl = url
                     }
                     return chat
                 }

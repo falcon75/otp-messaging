@@ -25,7 +25,6 @@ This could instead be a fun feature living on top of a secure messaging app
 
 - Add codes when chat exists
 - Notifications
-- Local picture assignment
 - Embed key in share, to match against when sender detects new chat
 - Full unicode charset, high quality random numbers
 - Prevent codebook race condition
