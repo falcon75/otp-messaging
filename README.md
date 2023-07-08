@@ -17,17 +17,10 @@ This could instead be a fun feature living on top of a secure messaging app
 
 ## Features
 
+- No sign in ✅
 - One time pad Encryption ✅
 - Firebase messaging backend (post encryption) ✅
 - Share codebook with friends via Airdrop ✅
-
-<br>
-
-- Add codes when chat exists
-- Notifications
-- Embed key in share, to match against when sender detects new chat
-- Full unicode charset, high quality random numbers
-- Prevent codebook race condition
 
 <br>
 

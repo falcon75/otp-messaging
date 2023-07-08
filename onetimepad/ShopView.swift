@@ -78,7 +78,7 @@ struct ShopView: View {
                     Text("£1 / Month")
                         .foregroundColor(.white)
                         .font(.callout)
-                        .offset(x: 140, y: -50)
+                        .offset(x: 125, y: -50)
                     Image(systemName: !premium ? "circle" : "checkmark.circle.fill").foregroundColor(colorScheme == .dark ? .black : .white).padding().offset(x: 140).font(.title)
                 }
             }

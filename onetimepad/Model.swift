@@ -30,13 +30,14 @@ class ChatsStore: ObservableObject {
         var name: String?
         var padLength: Int?
         var pfpUrl: URL?
+        var latestLocalMessage: String?
     }
     
     func storeChatsDictionary() {
         print(self.localChats)
         do {
             let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
-                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl)
+                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, latestLocalMessage: chat.latestLocalMessage)
             }
             
             let encoder = JSONEncoder()
@@ -57,7 +58,7 @@ class ChatsStore: ObservableObject {
             let encodedDictionary = try decoder.decode([String: EncodedChat].self, from: userData)
             
             let decodedDictionary = encodedDictionary.mapValues { encodedChat -> Chat in
-                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl)
+                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, latestLocalMessage: encodedChat.latestLocalMessage)
             }
             localChats = decodedDictionary
         } catch {
@@ -152,17 +153,20 @@ class Model: ObservableObject {
                     guard let chatId = chat.id else { return nil}
                     if self.chatsStore.localChats[chatId] == nil { // new chat not in chatsStore, add
                         self.chatsStore.localChats[chatId] = chat
+                        self.chatsStore.localChats[chatId]!.name = chatId
                         self.chatsStore.storeChatsDictionary()
                     } else { // update chat, excluding local properties
                         let pl = self.chatsStore.localChats[chatId]!.padLength
                         let name = self.chatsStore.localChats[chatId]!.name
                         let new = self.chatsStore.localChats[chatId]!.latestTime != chat.latestTime
                         let url = self.chatsStore.localChats[chatId]!.pfpUrl
+                        let llm = self.chatsStore.localChats[chatId]!.latestLocalMessage
                         self.chatsStore.localChats[chatId]! = chat
                         self.chatsStore.localChats[chatId]!.newMessage = new
                         self.chatsStore.localChats[chatId]!.name = name
                         self.chatsStore.localChats[chatId]!.padLength = pl
                         self.chatsStore.localChats[chatId]!.pfpUrl = url
+                        self.chatsStore.localChats[chatId]!.latestLocalMessage = llm
                     }
                     return chat
                 }
@@ -171,13 +175,15 @@ class Model: ObservableObject {
                     for change in snapshot.documentChanges {
                         if change.type == .added {
                             let addedDocument = change.document
-                            guard let chat = try? addedDocument.data(as: Chat.self) else {
+                            guard var chat = try? addedDocument.data(as: Chat.self) else {
                                 print("Error: could not cast to Msg")
                                 print(addedDocument.data())
                                 return
                             }
+                            let uid =  self.otherUser(chat: chat)
+                            chat.name = uid
                             let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
-                            ChatStore.shared.storeChat(uid: self.otherUser(chat: chat), chatData: chatData)
+                            ChatStore.shared.storeChat(uid: uid, chatData: chatData)
                         }
                     }
                 }

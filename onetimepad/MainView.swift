@@ -14,6 +14,7 @@ struct MainView: View {
     @StateObject private var model = Model()
     @State private var isShopActive = false
     @State private var isSettingsActive = false
+    @State private var isNavActive = false
     private var debug: Bool
     
     @Environment(\.colorScheme) var colorScheme
@@ -71,7 +72,7 @@ struct MainView: View {
                         VStack {
                             Divider()
                             ForEach(debug ? sampleChats : ChatsStore.shared.sortedChats) { chat in
-                                NavigationLink {
+                                NavigationLink(isActive: $isNavActive) {
                                     ChatView(chatmodel: ChatModel(chat: chat, otherUID: model.otherUser(chat: chat)))
                                 } label: {
                                     HStack(spacing: 10) {
@@ -119,7 +120,7 @@ struct MainView: View {
                                             } else {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: "lock.open")
-                                                    Text(chat.latestMessage)
+                                                    Text(chat.latestLocalMessage ?? "")
                                                         .lineLimit(1)
                                                         .truncationMode(.tail)
                                                     Spacer()
@@ -147,6 +148,10 @@ struct MainView: View {
                                     .foregroundColor(colorScheme == .dark ? .white : .black)
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .onTapGesture {
+                                        isNavActive = true
+                                        chatsStore.localChats[chat.id!]!.newMessage = false
+                                    }
                                 }
                                 Spacer()
                                 Divider()

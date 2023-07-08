@@ -25,12 +25,12 @@ struct ChatView: View {
     }
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             HStack(spacing: 14) {
                 Button {
                     presentationMode.wrappedValue.dismiss()
                 } label: {
-                    Image(systemName: "arrow.left").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                    Image(systemName: "arrow.left").font(.title).foregroundColor(colorScheme == .dark ? .white : .black).padding()
                 }
                 Button {
                     isPopoverPresented = true
@@ -72,24 +72,26 @@ struct ChatView: View {
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 17))
+                    .padding([.top, .bottom, .trailing])
                 }
                 .sheet(isPresented: $isPopoverPresented) {
-                    ChatOptionsView(chatModel: chatmodel, name: chatmodel.chat.name ?? "").presentationDetents([.medium])
+                    ChatOptionsView(chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
                 }
             }
-            .padding()
             .background(Color.gray.opacity(0.1))
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
-                    LazyVStack(spacing: 5) {
+                    LazyVStack(spacing: 1) {
+                        Spacer()
                         ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
                             let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
                             if debug {
-                                BubbleView(text: message.text, isFromCurrentUser: message.sender == "steve")
+                                BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == "steve")
                             } else {
-                                BubbleView(text: message.text, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
+                                BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
                             }
                         }
+                        Spacer()
                     }
                     .onChange(of: chatmodel.messagesDec) { _ in
                         withAnimation { scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1) }
@@ -133,26 +135,29 @@ struct ChatView: View {
 
 struct BubbleView: View {
     var text: String
+    var time: Date
     var isFromCurrentUser: Bool
-    var maxWidthFactor: CGFloat = 0.8
+    var maxWidthFactor: CGFloat = 0.75
     var cornerRadius: CGFloat = 17
+    @State var showTime = false
     
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         HStack {
             if isFromCurrentUser {
+                if showTime {
+                    Text(formatDateString(date: time))
+                        .foregroundColor(.gray)
+                        .font(.callout)
+                        .padding(10)
+                }
                 Spacer()
                 Text(text)
                     .padding(10)
                     .background(.black)
                     .foregroundColor(.white)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-//                    .background(
-//                        RoundedRectangle(cornerRadius: cornerRadius)
-//                            .stroke(colorScheme == .dark ? .white : .black, lineWidth: 5)
-//                    )
-//                    .foregroundColor(colorScheme == .dark ? .white : .black)
                     .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .trailing)
                     
             } else {
@@ -163,7 +168,16 @@ struct BubbleView: View {
                     .cornerRadius(cornerRadius)
                     .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .leading)
                 Spacer()
+                if showTime {
+                    Text(formatDateString(date: time))
+                        .foregroundColor(.gray)
+                        .font(.callout)
+                        .padding(10)
+                }
             }
+        }
+        .onTapGesture {
+            withAnimation { showTime.toggle() }
         }
     }
 }
@@ -218,10 +232,13 @@ struct ChatOptionsView: View {
                 TextField("Name", text: $name)
                     .truncationMode(.tail)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 17))
+//                clearButton
+//                    .frame(width: 20)
+                    
             }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 17))
             Spacer()
         }
         .padding()
@@ -237,6 +254,19 @@ struct ChatOptionsView: View {
             chatsStore.storeChatsDictionary()
         }
     }
+    
+//    private var clearButton: some View {
+//        Button(action: {
+//            self.name = ""
+//        }) {
+//            HStack {
+//                Spacer()
+//                Image(systemName: "xmark.circle.fill")
+//                    .foregroundColor(.secondary)
+//                    .padding(.trailing, 8)
+//            }
+//        }
+//    }
 }
 
 let sampleMessages = [

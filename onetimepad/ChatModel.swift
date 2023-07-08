@@ -28,6 +28,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
     var name: String?
     var padLength: Int?
     var pfpUrl: URL?
+    var latestLocalMessage: String?
     
     private enum CodingKeys: String, CodingKey {
         case id, latestMessage, latestSender, latestTime, typing, members
@@ -204,6 +205,8 @@ class ChatModel: ObservableObject {
                     
                     self.code = Array(self.code[cipher.count...])
                     self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: plaintext, sender: msg.sender))
+                    self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = plaintext
+                    self.chatsStore.storeChatsDictionary()
                     ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(name: self.name, codebook: self.code, messages: self.messagesDec))
                 }
             }
@@ -248,6 +251,8 @@ class ChatModel: ObservableObject {
             }
             code = Array(code[plain.count...])
             messagesDec.append(msgDec)
+            chatsStore.localChats[chat.id!]!.latestLocalMessage = plain
+            chatsStore.storeChatsDictionary()
             ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec)) // add message local
         } catch {
             print(error)
