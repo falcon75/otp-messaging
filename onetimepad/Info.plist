@@ -21,7 +21,7 @@
 				<string>public.json</string>
 			</array>
 			<key>LSSupportsOpeningDocumentsInPlace</key>
-			<string>YES</string>
+			<true/>
 		</dict>
 	</array>
 </dict>

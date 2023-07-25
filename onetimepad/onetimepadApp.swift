@@ -60,8 +60,21 @@ struct LoadingView: View {
 }
 
 struct Loading: View {
+    
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
-        Text("Loading")
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Image(colorScheme == .dark ? "darkIcon" : "lightIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                Spacer()
+            }
+            Spacer()
+        }
     }
 }
 

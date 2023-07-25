@@ -79,12 +79,12 @@ struct MainView: View {
                                                         .resizable()
                                                         .aspectRatio(contentMode: .fill)
                                                 } else {
-                                                    Image("samplePfp")
+                                                    Image("pfp2")
                                                         .resizable()
                                                         .aspectRatio(contentMode: .fill)
                                                 }
                                             } else {
-                                                Image("samplePfp")
+                                                Image("pfp2")
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fill)
                                             }

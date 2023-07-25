@@ -26,7 +26,7 @@ struct ChatView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 14) {
+            HStack(spacing: 0) {
                 Button {
                     presentationMode.wrappedValue.dismiss()
                 } label: {
@@ -43,12 +43,12 @@ struct ChatView: View {
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                 } else {
-                                    Image("samplePfp")
+                                    Image("pfp2")
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                 }
                             } else {
-                                Image("samplePfp")
+                                Image("pfp2")
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                             }
@@ -72,7 +72,7 @@ struct ChatView: View {
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 17))
-                    .padding([.top, .bottom, .trailing])
+                    .padding([.top, .bottom, .trailing], 8)
                 }
                 .sheet(isPresented: $isPopoverPresented) {
                     ChatOptionsView(chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
@@ -182,58 +182,101 @@ struct BubbleView: View {
     }
 }
 
+let pfpList = ["pfp1", "pfp2", "pfp3"]
+
 struct ChatOptionsView: View {
     @ObservedObject private var chatsStore = ChatsStore.shared
     @State private var selectedImageURL: URL?
     @State var chatModel: ChatModel
     @State var name: String
     @State var showImagePicker: Bool = false
+    @State var selected: String = "pfp1"
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
         VStack {
+//            HStack {
+//                Text("Options")
+//                    .font(.title)
+//                Spacer()
+//                Button {
+//                    presentationMode.wrappedValue.dismiss()
+//                } label: {
+//                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+//                }
+//            }.padding()
             HStack {
-                Spacer()
                 Button {
-                    presentationMode.wrappedValue.dismiss()
+                    showImagePicker = true
                 } label: {
-                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
-                }
-            }.padding()
-            Button {
-                showImagePicker = true
-            } label: {
-                HStack {
-                    if let url = chatsStore.localChats[chatModel.chat.id!]!.pfpUrl {
-                        if let uiImage = UIImage(contentsOfFile: url.path) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } else {
-                            Image("samplePfp")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
+                    ZStack {
+                        HStack {
+                            if let url = chatsStore.localChats[chatModel.chat.id!]!.pfpUrl {
+                                if let uiImage = UIImage(contentsOfFile: url.path) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                } else {
+                                    Image("pfp2")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                }
+                            } else {
+                                Image("pfp2")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            }
                         }
-                    } else {
-                        Image("samplePfp")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
+                        .frame(width: 190, height: 190)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        RoundedRectangle(cornerRadius: 22)
+                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart, Color.borderGradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                        .frame(width: 210, height: 210)
+                    }
+                    
+                }
+                VStack(spacing: 10) {
+                    Image(systemName: "photo")
+                        .font(.title)
+                        .frame(width: 100, height: 210)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(pfpList, id: \.self) { pfp in
+                        Button {
+                            withAnimation { selected = pfp }
+                        } label: {
+                            if selected == pfp {
+                                Image(pfp)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .padding(5)
+                                    .background(Color.gray.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 17))
+                                    .frame(width: 100, height: 100)
+                            } else {
+                                Image(pfp)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .frame(width: 100, height: 100)
+                            }
+                        }
                     }
                 }
-                .frame(width: 150, height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 17))
             }
             HStack {
                 TextField("Name", text: $name)
                     .truncationMode(.tail)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
-//                clearButton
-//                    .frame(width: 20)
+                clearButton
+                    .frame(width: 20)
                     
             }
             .padding()
@@ -255,18 +298,18 @@ struct ChatOptionsView: View {
         }
     }
     
-//    private var clearButton: some View {
-//        Button(action: {
-//            self.name = ""
-//        }) {
-//            HStack {
-//                Spacer()
-//                Image(systemName: "xmark.circle.fill")
-//                    .foregroundColor(.secondary)
-//                    .padding(.trailing, 8)
-//            }
-//        }
-//    }
+    private var clearButton: some View {
+        Button(action: {
+            self.name = ""
+        }) {
+            HStack {
+                Spacer()
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.secondary)
+                    .padding(.trailing, 8)
+            }
+        }
+    }
 }
 
 let sampleMessages = [
