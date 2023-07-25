@@ -29,10 +29,13 @@ struct ShopView: View {
                 premium = false
             } label: {
                 ZStack {
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 30)
                         .foregroundColor(.gray)
                         .frame(height: 150)
-                        .cornerRadius(30)
+                        .shadow(color: Color.darkShadow, radius: 8, x: 8, y: 8)
+                    RoundedRectangle(cornerRadius: 30)
+                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart2, Color.borderGradientEnd2]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                        .frame(height: 150)
                     HStack {
                         Spacer()
                         VStack {
@@ -56,10 +59,13 @@ struct ShopView: View {
                 premium = true
             } label: {
                 ZStack {
-                    Rectangle()
-                        .foregroundColor(.green)
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(.green)
                         .frame(height: 150)
-                        .cornerRadius(30)
+                        .shadow(color: Color.darkShadow, radius: 8, x: 8, y: 8)
+                    RoundedRectangle(cornerRadius: 30)
+                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.darkGreen, Color.lightGreen]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                        .frame(height: 150)
                     HStack {
                         Spacer()
                         VStack{
@@ -85,6 +91,23 @@ struct ShopView: View {
         }.padding()
     }
 }
+
+
+
+extension Color {
+    static let offWhite = Color(red: 240/255, green: 240/255, blue: 240/255)
+    static let darkShadow = Color(red: 220/255, green: 220/255, blue: 220/255)
+    static let lightShadow = Color.white
+    static let darkGreen = Color(red: 41/255, green: 163/255, blue: 61/255)
+    static let lightGreen = Color(red: 56/255, green: 223/255, blue: 83/255)
+    static let borderGradientStart = Color(red: 230/255, green: 230/255, blue: 230/255)
+    static let borderGradientEnd = Color.white
+    
+    static let base: Double = 190
+    static let borderGradientEnd2 = Color(red: base/255, green: base/255, blue: base/255)
+    static let borderGradientStart2 = Color(red: (base + 20)/255, green: (base + 20)/255, blue: (base + 20)/255)
+}
+
 
 struct ShopView_Previews: PreviewProvider {
     static var previews: some View {
