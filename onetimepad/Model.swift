@@ -34,7 +34,6 @@ class ChatsStore: ObservableObject {
     }
     
     func storeChatsDictionary() {
-        print(self.localChats)
         do {
             let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
                 return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, latestLocalMessage: chat.latestLocalMessage)
@@ -65,7 +64,6 @@ class ChatsStore: ObservableObject {
             print("Error retrieving chats dictionary: \(error)")
             return
         }
-        print(self.localChats)
     }
 }
 
@@ -78,6 +76,7 @@ class Model: ObservableObject {
     
     init() {
         chatsStore.retrieveChatsDictionary()
+        attach()
     }
     
     func otherUser(chat: Chat) -> String {

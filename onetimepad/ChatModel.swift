@@ -104,7 +104,8 @@ class ChatModel: ObservableObject {
     @Published var messageText: String = "" {
         didSet {
             if !messageText.isEmpty {
-                writeTyping(typing: true)
+//                writeTyping(typing: true)
+                print("typing set true")
                 timer?.invalidate()
                 timer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(timerExpired), userInfo: nil, repeats: false)
             }
@@ -112,20 +113,19 @@ class ChatModel: ObservableObject {
     }
     
     init(chat: Chat, otherUID: String) {
+        print("chat model initialised for: \(otherUID)")
         self.chat = chat
         self.otherUID = otherUID
-        if let c = ChatStore.shared.getChat(for: otherUID) {
-            self.code = c.codebook
-            self.messagesDec = c.messages
-            self.name = c.name
-        } else {
-            self.code = []
-        }
+        let c = ChatStore.shared.getChat(for: otherUID)!
+        self.code = c.codebook
+        self.messagesDec = c.messages
+        self.name = c.name
         attach()
     }
     
     @objc private func timerExpired() {
-        writeTyping(typing: false)
+//        writeTyping(typing: false)
+        print("typing set false")
         timer = nil
     }
     
@@ -139,7 +139,7 @@ class ChatModel: ObservableObject {
             if let error = error {
                 print("Error updating document: \(error)")
             } else {
-                print("New message status updated successfully")
+                print("")
             }
         }
     }
@@ -213,6 +213,7 @@ class ChatModel: ObservableObject {
     }
     
     func send(plain: String){
+        print("sending")
         var pointer = 0
         var cipher = ""
         

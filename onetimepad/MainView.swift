@@ -12,16 +12,12 @@ struct MainView: View {
     @StateObject private var chatsStore = ChatsStore.shared
     @ObservedObject private var userManager = UserManager.shared
     @StateObject private var model = Model()
+    
     @State private var isShopActive = false
     @State private var isSettingsActive = false
     @State private var isNavActive = false
-    private var debug: Bool
     
     @Environment(\.colorScheme) var colorScheme
-    
-    init(debug: Bool = false) {
-        self.debug = debug
-    }
 
     private func shareData() {
         guard let user = userManager.currentUser else {
@@ -67,13 +63,13 @@ struct MainView: View {
                         ShopView().presentationDetents([.medium])
                     }
                 }.padding()
-                if (debug ? sampleChats : ChatsStore.shared.sortedChats).count > 0 {
+                if (ChatsStore.shared.sortedChats).count > 0 {
                     ScrollView {
                         VStack {
                             Divider()
-                            ForEach(debug ? sampleChats : ChatsStore.shared.sortedChats) { chat in
+                            ForEach(ChatsStore.shared.sortedChats) { chat in
                                 NavigationLink(isActive: $isNavActive) {
-                                    ChatView(chatmodel: ChatModel(chat: chat, otherUID: model.otherUser(chat: chat)))
+                                    ChatView(chat: chat, uid: model.otherUser(chat: chat))
                                 } label: {
                                     HStack(spacing: 10) {
                                         HStack {
@@ -198,9 +194,6 @@ struct MainView: View {
         .onOpenURL(perform: { url in
             model.handleSharedData(url: url)
         })
-        .onChange(of: userManager.currentUser) { newUser in
-            model.attach()
-        }
     }
 }
 
@@ -300,8 +293,8 @@ func formatNumber(_ number: Int) -> String {
 }
 
 
-struct MainView_Previews: PreviewProvider {
-    static var previews: some View {
-        MainView(debug: true)
-    }
-}
+//struct MainView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        MainView()
+//    }
+//}

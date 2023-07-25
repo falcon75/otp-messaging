@@ -19,9 +19,9 @@ struct ChatView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
     
-    init (chatmodel: ChatModel, debug: Bool = false) {
+    init (chat: Chat, uid: String, debug: Bool = false) {
         self.debug = debug
-        _chatmodel = StateObject(wrappedValue: chatmodel)
+        _chatmodel = StateObject(wrappedValue: ChatModel(chat: chat, otherUID: uid))
     }
     
     var body: some View {
@@ -276,11 +276,11 @@ let sampleMessages = [
     MessageDec(id: "123", date: Date(), text: "h", sender: "steve")
 ]
 
-struct ChatView_Previews: PreviewProvider {
-    static var previews: some View {
-        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"], name: "Steve Jobs"), otherUID: "bob"), debug: true)
-    }
-}
+//struct ChatView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"], name: "Steve Jobs"), otherUID: "bob"), debug: true)
+//    }
+//}
 
 struct ImageSelectionView: UIViewControllerRepresentable {
     @Binding var selectedImageURL: URL?
