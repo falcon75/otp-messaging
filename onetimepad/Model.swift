@@ -37,7 +37,7 @@ class ChatsStore: ObservableObject {
     func storeChatsDictionary() {
         do {
             let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
-                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, pfpLocal: chat.pfpLocal, latestLocalMessage: chat.latestLocalMessage)
+                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, newMessage: chat.newMessage, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, pfpLocal: chat.pfpLocal, latestLocalMessage: chat.latestLocalMessage)
             }
             
             let encoder = JSONEncoder()
@@ -58,7 +58,7 @@ class ChatsStore: ObservableObject {
             let encodedDictionary = try decoder.decode([String: EncodedChat].self, from: userData)
             
             let decodedDictionary = encodedDictionary.mapValues { encodedChat -> Chat in
-                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, pfpLocal: encodedChat.pfpLocal, latestLocalMessage: encodedChat.latestLocalMessage)
+                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, newMessage: encodedChat.newMessage, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, pfpLocal: encodedChat.pfpLocal, latestLocalMessage: encodedChat.latestLocalMessage)
             }
             localChats = decodedDictionary
         } catch {
@@ -77,6 +77,7 @@ class Model: ObservableObject {
     
     init() {
         chatsStore.retrieveChatsDictionary()
+        print(chatsStore.localChats)
         attach()
     }
     
@@ -159,7 +160,7 @@ class Model: ObservableObject {
                     } else { // update chat, excluding local properties
                         let pl = self.chatsStore.localChats[chatId]!.padLength
                         let name = self.chatsStore.localChats[chatId]!.name
-                        let new = self.chatsStore.localChats[chatId]!.latestTime != chat.latestTime
+                        let new = self.chatsStore.localChats[chatId]!.newMessage
                         let url = self.chatsStore.localChats[chatId]!.pfpUrl
                         let pfpLocal = self.chatsStore.localChats[chatId]!.pfpLocal
                         let llm = self.chatsStore.localChats[chatId]!.latestLocalMessage

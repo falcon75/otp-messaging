@@ -24,16 +24,16 @@ This could instead be a fun feature living on top of a secure messaging app
 
 <br>
 
-## Firebase Backend OTP App
-
-<br>
-
-The cipher text is written to a chat collection in Firebase, a listener fetches messages from 
-the chat making them available to be decrypted. Next to add: QR codebook sharing so that two 
-people can participate in the chat.
-
-<br>
-
-![app v2 gif](vid2.gif)
+## V1
+<img src="assets/vid2.gif" style="max-width: 200px;">
 
 
+## V2
+
+
+<img src="assets/IMG_4300.PNG" style="max-width: 200px;">
+<img src="assets/IMG_4303.PNG" style="max-width: 200px;">
+<img src="assets/IMG_4301.PNG" style="max-width: 200px;">
+<img src="assets/IMG_4302.PNG" style="max-width: 200px;">
+
+<!-- <img src="assets/IMG_4304.PNG" style="max-width: 200px;"> -->

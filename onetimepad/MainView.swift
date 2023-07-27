@@ -148,6 +148,7 @@ struct MainView: View {
                                     .onTapGesture {
                                         isNavActive = true
                                         withAnimation { chatsStore.localChats[chat.id!]!.newMessage = false }
+                                        chatsStore.storeChatsDictionary()
                                     }
                                 }
                                 Spacer()

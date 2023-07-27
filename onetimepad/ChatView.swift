@@ -82,7 +82,7 @@ struct ChatView: View {
 //            Rectangle().frame(height: 20).opacity(0.2)
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
-                    LazyVStack(spacing: 1) {
+                    LazyVStack(spacing: 3) {
                         ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
                             let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
                             if debug {
@@ -128,7 +128,14 @@ struct ChatView: View {
             }
             .padding()
             .background(Color.gray.opacity(0.1))
-        }.navigationBarHidden(true)
+        }
+        .onAppear {
+            chatmodel.isViewDisplayed = true
+        }
+        .onDisappear {
+            chatmodel.isViewDisplayed = false
+        }
+        .navigationBarHidden(true)
     }
 }
 
@@ -137,7 +144,7 @@ struct BubbleView: View {
     var time: Date
     var isFromCurrentUser: Bool
     var maxWidthFactor: CGFloat = 0.75
-    var cornerRadius: CGFloat = 17
+    var cornerRadius: CGFloat = 20
     @State var showTime = false
     
     @Environment(\.colorScheme) var colorScheme

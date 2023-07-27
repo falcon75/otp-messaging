@@ -83,6 +83,7 @@ class ChatModel: ObservableObject {
     private var chatsStore = ChatsStore.shared
     private let db = Firestore.firestore()
     @Published var chat: Chat
+    @Published var isViewDisplayed = false
     var otherUID: String
     
     @Published var code: [UInt16] { // codebook for the conversation
@@ -200,6 +201,7 @@ class ChatModel: ObservableObject {
                     self.code = Array(self.code[msg.cipherBytes.count...])
                     self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: self.bytesToString(resultBytes) ?? "Err:12", sender: msg.sender))
                     self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = "hi"
+                    self.chatsStore.localChats[self.chat.id!]!.newMessage = !self.isViewDisplayed
                     self.chatsStore.storeChatsDictionary()
                     ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(name: self.name, codebook: self.code, messages: self.messagesDec))
                 }
