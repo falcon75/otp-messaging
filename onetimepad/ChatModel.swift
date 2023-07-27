@@ -8,12 +8,13 @@
 import Foundation
 import Firebase
 import FirebaseFirestoreSwift
+import CryptoKit
 
 
 struct Message: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
     var date: Date
-    var text: String
+    var cipherBytes: [UInt16]
     var sender: String
 }
 
@@ -37,7 +38,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
 
 struct ShareCodebook: Codable {
     var id: String
-    var codebook: [Int]
+    var codebook: [UInt16]
 }
 
 struct MessageDec: Codable, Equatable, Identifiable {
@@ -49,7 +50,7 @@ struct MessageDec: Codable, Equatable, Identifiable {
 
 struct ChatData: Codable {
     var name: String
-    var codebook: [Int]
+    var codebook: [UInt16]
     var messages: [MessageDec]
 }
 
@@ -83,16 +84,12 @@ class ChatModel: ObservableObject {
     @Published var chat: Chat
     var otherUID: String
     
-    let a_to_n = ["a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10, "l": 11, "m": 12, "n": 13, "o": 14, "p": 15, "q": 16, "r": 17, "s": 18, "t": 19, "u": 20, "v": 21, "w": 22, "x": 23, "y": 24, "z": 25, " ": 26]
-    let n_to_a = [0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h", 8: "i", 9: "j", 10: "k", 11: "l", 12: "m", 13: "n", 14: "o", 15: "p", 16: "q", 17: "r", 18: "s", 19: "t", 20: "u", 21: "v", 22: "w", 23: "x", 24: "y", 25: "z", 26: " "]
-    
-    @Published var code: [Int] { // codebook for the conversation
+    @Published var code: [UInt16] { // codebook for the conversation
         didSet {
             chatsStore.localChats[chat.id!]!.padLength = code.count
             chatsStore.storeChatsDictionary()
         }
     }
-    @Published var error = false // error indicator
     @Published var messages: [Message] = []
     @Published var messagesDec: [MessageDec] = []
     private var timer: Timer?
@@ -113,7 +110,7 @@ class ChatModel: ObservableObject {
     }
     
     init(chat: Chat, otherUID: String) {
-        print("chat model initialised for: \(otherUID)")
+//        print("chat model initialised for: \(otherUID)")
         self.chat = chat
         self.otherUID = otherUID
         let c = ChatStore.shared.getChat(for: otherUID)!
@@ -183,15 +180,11 @@ class ChatModel: ObservableObject {
                         return
                     }
                     
-                    var pointer = 0
-                    var plaintext = ""
-                    let cipher = msg.text
+                    let minCount = min(msg.cipherBytes.count, self.code.count)
                     
-                    for i in cipher {
-                        let c = String(i)
-                        let n = ((self.a_to_n[c] ?? 26) - self.code[pointer] + 27) % 27
-                        plaintext += self.n_to_a[n] ?? " "
-                        pointer += 1
+                    var resultBytes = [UInt16]()
+                    for i in 0..<minCount {
+                        resultBytes.append(msg.cipherBytes[i] ^ self.code[i])
                     }
                     
                     self.db.collection("chats").document(self.chat.id!).collection("messages").document(msg.id!).delete() { err in
@@ -203,32 +196,47 @@ class ChatModel: ObservableObject {
                         }
                     }
                     
-                    self.code = Array(self.code[cipher.count...])
-                    self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: plaintext, sender: msg.sender))
-                    self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = plaintext
+                    self.code = Array(self.code[msg.cipherBytes.count...])
+                    self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: self.bytesToString(resultBytes) ?? "Err:12", sender: msg.sender))
+                    self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = "hi"
                     self.chatsStore.storeChatsDictionary()
                     ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(name: self.name, codebook: self.code, messages: self.messagesDec))
                 }
             }
     }
     
-    func send(plain: String){
-        print("sending")
-        var pointer = 0
-        var cipher = ""
-        
-        if plain.count > code.count - pointer {
-            error = true
-            return
+    func stringToBytes(_ input: String) -> [UInt16] {
+        return Array(input.utf16)
+    }
+    
+    func bytesToString(_ bytes: [UInt16]) -> String? {
+        return String(decoding: bytes, as: UTF16.self)
+    }
+    
+    func generateRandomBytes(count: Int) -> [UInt16] {
+        var randomBytes = [UInt16](repeating: 0, count: count)
+        let result = SecRandomCopyBytes(kSecRandomDefault, 2*count, &randomBytes)
+        if result == errSecSuccess {
+            return randomBytes
         } else {
-            error = false
+            fatalError("Failed to generate random bytes.")
+        }
+    }
+    
+    func send(plain: String){
+        print("Sending")
+        
+        if plain.count > code.count {
+            print("Not enough characters")
+            return
         }
         
-        for i in plain {
-            let c = String(i)
-            let n = ((a_to_n[c] ?? 26) + code[pointer]) % 27
-            cipher += n_to_a[n] ?? " "
-            pointer += 1
+        let plainBytes = stringToBytes(plain)
+        let minCount = min(plainBytes.count, code.count)
+        
+        var cipherBytes = [UInt16]()
+        for i in 0..<minCount {
+            cipherBytes.append(plainBytes[i] ^ code[i])
         }
         
         guard let user = UserManager.shared.currentUser else {
@@ -237,12 +245,12 @@ class ChatModel: ObservableObject {
         }
         
         let date = Date()
-        let msg = Message(date: date, text: cipher, sender: user.uid)
+        let msg = Message(date: date, cipherBytes: cipherBytes, sender: user.uid)
         let msgDec = MessageDec(id: UUID().uuidString, date: date, text: plain, sender: user.uid)
         
         do {
             let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg) // add message
-            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": cipher, "latestTime": Date()] // update chat
+            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": "hi", "latestTime": Date()] // update chat
             db.collection("chats").document(chat.id!).updateData(update) { error in
                 if let error = error {
                     print("Error updating document: \(error)")
@@ -250,7 +258,7 @@ class ChatModel: ObservableObject {
                     print("New message status updated successfully")
                 }
             }
-            code = Array(code[plain.count...])
+            code = Array(code[msg.cipherBytes.count...])
             messagesDec.append(msgDec)
             chatsStore.localChats[chat.id!]!.latestLocalMessage = plain
             chatsStore.storeChatsDictionary()

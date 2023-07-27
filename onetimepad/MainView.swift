@@ -25,7 +25,7 @@ struct MainView: View {
             return
         }
         
-        let sc = ShareCodebook(id: user.uid, codebook: model.generate(n: 1000))
+        let sc = ShareCodebook(id: user.uid, codebook: model.generate(1000))
         
         guard let data = try? JSONEncoder().encode(sc) else {
             print("Failed to encode data.")

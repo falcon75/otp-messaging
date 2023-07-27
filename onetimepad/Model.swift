@@ -93,13 +93,14 @@ class Model: ObservableObject {
         return ""
     }
     
-    func generate (n: Int) -> [Int] {
-        var codebook: [Int] = []
-        for _ in 0..<n {
-            codebook.append(Int.random(in: 0...26))
+    func generate(_ numberOfInts: Int) -> [UInt16] {
+        var randomBytes = [UInt16](repeating: 0, count: numberOfInts)
+        let result = SecRandomCopyBytes(kSecRandomDefault, 2*numberOfInts, &randomBytes)
+        if result == errSecSuccess {
+            return randomBytes
+        } else {
+            fatalError("Failed to generate random bytes.")
         }
-        print(codebook)
-        return codebook
     }
     
     func handleSharedData(url: URL) {

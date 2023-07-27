@@ -103,12 +103,11 @@ struct ChatView: View {
             }.padding([.trailing, .leading], 5)
             HStack(spacing: 12) {
                 TextField("Message", text: $chatmodel.messageText)
-                    .autocapitalization(.none)
                     .padding(12)
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
                 Button {
-                    chatmodel.send(plain: chatmodel.messageText.lowercased())
+                    chatmodel.send(plain: chatmodel.messageText)
                     chatmodel.messageText = ""
                 } label: {
                     HStack(spacing: -2) {
