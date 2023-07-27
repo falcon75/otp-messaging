@@ -15,6 +15,7 @@ struct ChatView: View {
     @StateObject var chatmodel: ChatModel
     @State private var isPopoverPresented = false
     private var debug: Bool
+    @State private var scroller = false
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
@@ -78,31 +79,44 @@ struct ChatView: View {
                     ChatOptionsView(selected: chatsStore.localChats[chatmodel.chat.id!]!.pfpLocal, chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
                 }
             }
-            .background(Color.gray.opacity(0.1))
-//            Rectangle().frame(height: 20).opacity(0.2)
+            .background(Color.offWhite)
+            Divider()
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
-                    LazyVStack(spacing: 3) {
-                        ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
-                            let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
-                            if debug {
-                                BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == "steve")
-                            } else {
-                                BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
+                    ZStack {
+                        LazyVStack(spacing: 3) {
+                            ForEach(chatmodel.messagesDec.indices, id: \.self) { index in
+                                let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
+                                if index == 0 {
+                                    BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
+                                        .padding([.top], 10)
+                                } else if index == chatmodel.messagesDec.indices.last {
+                                    BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
+                                        .padding([.bottom], 10)
+                                } else {
+                                    BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
+                                }
                             }
                         }
                     }
                     .onChange(of: chatmodel.messagesDec) { _ in
                         withAnimation { scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1) }
                     }
+                    .onChange(of: scroller, perform: { newValue in
+                        withAnimation { scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1) }
+                    })
                     .onAppear {
                         scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1)
                     }
                 }
             }.padding([.trailing, .leading], 5)
-//            Rectangle().frame(height: 20).opacity(0.2)
+            Divider()
             HStack(spacing: 12) {
-                TextField("Message", text: $chatmodel.messageText)
+                TextField("Message", text: $chatmodel.messageText, onEditingChanged: { changed in
+                    if changed {
+                        scroller.toggle()
+                    }
+                })
                     .padding(12)
                     .background(colorScheme == .dark ? .black : .white)
                     .cornerRadius(17)
@@ -127,7 +141,7 @@ struct ChatView: View {
                 .disabled(chatmodel.messageText == "")
             }
             .padding()
-            .background(Color.gray.opacity(0.1))
+            .background(Color.offWhite)
         }
         .onAppear {
             chatmodel.isViewDisplayed = true
@@ -144,7 +158,7 @@ struct BubbleView: View {
     var time: Date
     var isFromCurrentUser: Bool
     var maxWidthFactor: CGFloat = 0.75
-    var cornerRadius: CGFloat = 20
+    var cornerRadius: CGFloat = 22
     @State var showTime = false
     
     @Environment(\.colorScheme) var colorScheme
@@ -160,7 +174,8 @@ struct BubbleView: View {
                 }
                 Spacer()
                 Text(text)
-                    .padding(10)
+                    .padding([.top, .bottom], 10)
+                    .padding([.leading, .trailing], 14)
                     .background(.black)
                     .foregroundColor(.white)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -168,7 +183,8 @@ struct BubbleView: View {
                     
             } else {
                 Text(text)
-                    .padding(10)
+                    .padding([.top, .bottom], 10)
+                    .padding([.leading, .trailing], 12)
                     .background(Color.gray.opacity(0.4))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                     .cornerRadius(cornerRadius)
@@ -188,7 +204,7 @@ struct BubbleView: View {
     }
 }
 
-let pfpList = ["pfp1", "pfp2", "pfp3"]
+let pfpList = ["pfp1", "pfp2", "pfp3", "pfp4"]
 
 struct ChatOptionsView: View {
     @ObservedObject private var chatsStore = ChatsStore.shared
@@ -215,7 +231,7 @@ struct ChatOptionsView: View {
                 }
                 Spacer()
             }
-            VStack(spacing: 20) {
+            VStack(spacing: 10) {
                 VStack {
                     HStack {
                         ZStack {
@@ -243,42 +259,61 @@ struct ChatOptionsView: View {
                             .frame(width: 210, height: 210)
                         }
                     }
-                    HStack {
+                    HStack(spacing: 10) {
                         Button {
                             showImagePicker = true
                         } label: {
                             Image(systemName: "photo")
                                 .font(.title)
                                 .frame(width: 80, height: 80)
-                                .background(Color.gray.opacity(0.1))
+                                .background(Color.offWhite)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
+                                .padding([.bottom], 8)
                         }
-                        ScrollView(.horizontal) {
-                            HStack(spacing: 10) {
-                                ForEach(pfpList, id: \.self) { pfp in
-                                    Button {
-                                        withAnimation { selected = pfp }
-                                        selectedImageURL = nil
-                                    } label: {
-                                        if selected == pfp {
-                                            Image(pfp)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                .padding(5)
-                                                .background(Color.gray.opacity(0.1))
-                                                .clipShape(RoundedRectangle(cornerRadius: 17))
-                                                .frame(width: 80, height: 80)
-                                        } else {
-                                            Image(pfp)
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                .frame(width: 80, height: 80)
+                        ZStack {
+                            ScrollView(.horizontal) {
+                                HStack(spacing: 10) {
+                                    ForEach(pfpList, id: \.self) { pfp in
+                                        Button {
+                                            withAnimation { selected = pfp }
+                                            selectedImageURL = nil
+                                        } label: {
+                                            if selected == pfp {
+                                                Image(pfp)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                    .padding(5)
+                                                    .background(Color.offWhite)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 17))
+                                                    .frame(width: 80, height: 80)
+                                            } else {
+                                                Image(pfp)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                    .frame(width: 80, height: 80)
+                                            }
                                         }
+                                        .padding([.bottom], 8)
                                     }
                                 }
+                            }
+                            HStack {
+                                Spacer()
+                                Rectangle()
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(stops: [
+                                                .init(color: Color.white.opacity(0), location: 0),
+                                                .init(color: Color.white.opacity(1), location: 1)
+                                            ]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: 20)
                             }
                         }
                     }
@@ -292,7 +327,7 @@ struct ChatOptionsView: View {
                         
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .background(Color.offWhite)
                 .clipShape(RoundedRectangle(cornerRadius: 17))
                 Spacer()
                 
