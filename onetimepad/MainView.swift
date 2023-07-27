@@ -56,6 +56,7 @@ struct MainView: View {
                     Spacer()
                     Button {
                         isShopActive = true
+                        print(chatsStore.localChats)
                     } label: {
                         Image(systemName: "sparkles").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
                     }
@@ -84,7 +85,7 @@ struct MainView: View {
                                                         .aspectRatio(contentMode: .fill)
                                                 }
                                             } else {
-                                                Image("pfp2")
+                                                Image(chatsStore.localChats[chat.id!]!.pfpLocal ?? "pfp1")
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fill)
                                             }
@@ -99,11 +100,11 @@ struct MainView: View {
                                                     .lineLimit(1)
                                                     .truncationMode(.tail)
                                                 Spacer()
-                                            }
-                                            if chat.newMessage ?? false {
+                                            }.padding([.leading], 4)
+                                            if chat.newMessage ?? true {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: "lock")
-                                                    Text(chat.latestMessage)
+                                                    Text("New Message")
                                                         .lineLimit(1)
                                                         .truncationMode(.tail)
                                                     Spacer()
@@ -146,7 +147,7 @@ struct MainView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                     .onTapGesture {
                                         isNavActive = true
-                                        chatsStore.localChats[chat.id!]!.newMessage = false
+                                        withAnimation { chatsStore.localChats[chat.id!]!.newMessage = false }
                                     }
                                 }
                                 Spacer()

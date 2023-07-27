@@ -9,6 +9,7 @@ import SwiftUI
 import FirebaseCore
 import FirebaseAuth
 import Combine
+import Foundation
 
 
 struct User: Equatable {
@@ -51,7 +52,9 @@ struct LoadingView: View {
         if loading {
             Loading()
             .onChange(of: userManager.currentUser) { new in
-                withAnimation { loading = false }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0) {
+                    withAnimation { loading = false }
+                }
             }
         } else {
             LazyView(MainView())

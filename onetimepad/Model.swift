@@ -30,13 +30,14 @@ class ChatsStore: ObservableObject {
         var name: String?
         var padLength: Int?
         var pfpUrl: URL?
+        var pfpLocal: String?
         var latestLocalMessage: String?
     }
     
     func storeChatsDictionary() {
         do {
             let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
-                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, latestLocalMessage: chat.latestLocalMessage)
+                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, pfpLocal: chat.pfpLocal, latestLocalMessage: chat.latestLocalMessage)
             }
             
             let encoder = JSONEncoder()
@@ -57,7 +58,7 @@ class ChatsStore: ObservableObject {
             let encodedDictionary = try decoder.decode([String: EncodedChat].self, from: userData)
             
             let decodedDictionary = encodedDictionary.mapValues { encodedChat -> Chat in
-                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, latestLocalMessage: encodedChat.latestLocalMessage)
+                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, pfpLocal: encodedChat.pfpLocal, latestLocalMessage: encodedChat.latestLocalMessage)
             }
             localChats = decodedDictionary
         } catch {
@@ -114,7 +115,7 @@ class Model: ObservableObject {
             let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
             
             do {
-                let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestSender: "", latestTime: Date(), typing: "", members: [sc.id, user.uid]))
+                let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestSender: "", latestTime: Date(), typing: "", members: [sc.id, user.uid], pfpLocal: pfpList.randomElement()))
                 let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
                 ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
             } catch {
@@ -160,12 +161,14 @@ class Model: ObservableObject {
                         let name = self.chatsStore.localChats[chatId]!.name
                         let new = self.chatsStore.localChats[chatId]!.latestTime != chat.latestTime
                         let url = self.chatsStore.localChats[chatId]!.pfpUrl
+                        let pfpLocal = self.chatsStore.localChats[chatId]!.pfpLocal
                         let llm = self.chatsStore.localChats[chatId]!.latestLocalMessage
                         self.chatsStore.localChats[chatId]! = chat
                         self.chatsStore.localChats[chatId]!.newMessage = new
                         self.chatsStore.localChats[chatId]!.name = name
                         self.chatsStore.localChats[chatId]!.padLength = pl
                         self.chatsStore.localChats[chatId]!.pfpUrl = url
+                        self.chatsStore.localChats[chatId]!.pfpLocal = pfpLocal
                         self.chatsStore.localChats[chatId]!.latestLocalMessage = llm
                     }
                     return chat

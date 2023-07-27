@@ -48,7 +48,7 @@ struct ChatView: View {
                                         .aspectRatio(contentMode: .fill)
                                 }
                             } else {
-                                Image("pfp2")
+                                Image(chatsStore.localChats[chatmodel.chat.id!]!.pfpLocal ?? "pfp1")
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                             }
@@ -75,14 +75,14 @@ struct ChatView: View {
                     .padding([.top, .bottom, .trailing], 8)
                 }
                 .sheet(isPresented: $isPopoverPresented) {
-                    ChatOptionsView(chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
+                    ChatOptionsView(selected: chatsStore.localChats[chatmodel.chat.id!]!.pfpLocal, chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
                 }
             }
             .background(Color.gray.opacity(0.1))
+//            Rectangle().frame(height: 20).opacity(0.2)
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
                     LazyVStack(spacing: 1) {
-                        Spacer()
                         ForEach(debug ? sampleMessages.indices : chatmodel.messagesDec.indices, id: \.self) { index in
                             let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
                             if debug {
@@ -91,7 +91,6 @@ struct ChatView: View {
                                 BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
                             }
                         }
-                        Spacer()
                     }
                     .onChange(of: chatmodel.messagesDec) { _ in
                         withAnimation { scrollViewProxy.scrollTo(chatmodel.messagesDec.count - 1) }
@@ -101,6 +100,7 @@ struct ChatView: View {
                     }
                 }
             }.padding([.trailing, .leading], 5)
+//            Rectangle().frame(height: 20).opacity(0.2)
             HStack(spacing: 12) {
                 TextField("Message", text: $chatmodel.messageText)
                     .padding(12)
@@ -186,114 +186,132 @@ let pfpList = ["pfp1", "pfp2", "pfp3"]
 struct ChatOptionsView: View {
     @ObservedObject private var chatsStore = ChatsStore.shared
     @State private var selectedImageURL: URL?
+    @State var selected: String?
     @State var chatModel: ChatModel
     @State var name: String
     @State var showImagePicker: Bool = false
-    @State var selected: String = "pfp1"
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        VStack {
-//            HStack {
-//                Text("Options")
-//                    .font(.title)
-//                Spacer()
-//                Button {
-//                    presentationMode.wrappedValue.dismiss()
-//                } label: {
-//                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
-//                }
-//            }.padding()
-            HStack {
-                Button {
-                    showImagePicker = true
-                } label: {
-                    ZStack {
-                        HStack {
-                            if let url = chatsStore.localChats[chatModel.chat.id!]!.pfpUrl {
-                                if let uiImage = UIImage(contentsOfFile: url.path) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
+        ZStack {
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        presentationMode.wrappedValue.dismiss()
+                    } label: {
+                        Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+            VStack(spacing: 20) {
+                VStack {
+                    HStack {
+                        ZStack {
+                            HStack {
+                                if let url = chatsStore.localChats[chatModel.chat.id!]!.pfpUrl {
+                                    if let uiImage = UIImage(contentsOfFile: url.path) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    } else {
+                                        Image("pfp2")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    }
                                 } else {
-                                    Image("pfp2")
+                                    Image(chatsStore.localChats[chatModel.chat.id!]!.pfpLocal ?? "pfp1")
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                 }
-                            } else {
-                                Image("pfp2")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
                             }
+                            .frame(width: 190, height: 190)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            RoundedRectangle(cornerRadius: 22)
+                            .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart, Color.borderGradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                            .frame(width: 210, height: 210)
                         }
-                        .frame(width: 190, height: 190)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        RoundedRectangle(cornerRadius: 22)
-                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart, Color.borderGradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
-                        .frame(width: 210, height: 210)
                     }
-                    
-                }
-                VStack(spacing: 10) {
-                    Image(systemName: "photo")
-                        .font(.title)
-                        .frame(width: 100, height: 210)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
-                    ForEach(pfpList, id: \.self) { pfp in
+                    HStack {
                         Button {
-                            withAnimation { selected = pfp }
+                            showImagePicker = true
                         } label: {
-                            if selected == pfp {
-                                Image(pfp)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .padding(5)
-                                    .background(Color.gray.opacity(0.1))
-                                    .clipShape(RoundedRectangle(cornerRadius: 17))
-                                    .frame(width: 100, height: 100)
-                            } else {
-                                Image(pfp)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .frame(width: 100, height: 100)
+                            Image(systemName: "photo")
+                                .font(.title)
+                                .frame(width: 80, height: 80)
+                                .background(Color.gray.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                        }
+                        ScrollView(.horizontal) {
+                            HStack(spacing: 10) {
+                                ForEach(pfpList, id: \.self) { pfp in
+                                    Button {
+                                        withAnimation { selected = pfp }
+                                        selectedImageURL = nil
+                                    } label: {
+                                        if selected == pfp {
+                                            Image(pfp)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                .padding(5)
+                                                .background(Color.gray.opacity(0.1))
+                                                .clipShape(RoundedRectangle(cornerRadius: 17))
+                                                .frame(width: 80, height: 80)
+                                        } else {
+                                            Image(pfp)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                .frame(width: 80, height: 80)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-            HStack {
-                TextField("Name", text: $name)
-                    .truncationMode(.tail)
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-                clearButton
-                    .frame(width: 20)
-                    
+                HStack {
+                    TextField("Name", text: $name)
+                        .truncationMode(.tail)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                    clearButton
+                        .frame(width: 20)
+                        
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 17))
+                Spacer()
+                
             }
             .padding()
-            .background(Color.gray.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 17))
-            Spacer()
-        }
-        .padding()
-        .onChange(of: name) { newValue in
-            chatsStore.localChats[chatModel.chat.id!]!.name = name
-            chatsStore.storeChatsDictionary()
-        }
-        .sheet(isPresented: $showImagePicker) {
-            ImageSelectionView(selectedImageURL: $selectedImageURL)
-        }
-        .onChange(of: selectedImageURL) { newValue in
-            chatsStore.localChats[chatModel.chat.id!]!.pfpUrl = selectedImageURL
-            chatsStore.storeChatsDictionary()
+            .onChange(of: name) { newValue in
+                chatsStore.localChats[chatModel.chat.id!]!.name = name
+                chatsStore.storeChatsDictionary()
+            }
+            .sheet(isPresented: $showImagePicker) {
+                ImageSelectionView(selectedImageURL: $selectedImageURL)
+            }
+            .onChange(of: selectedImageURL) { newValue in
+                chatsStore.localChats[chatModel.chat.id!]!.pfpUrl = selectedImageURL
+                if newValue != nil {
+                    selected = nil
+                }
+                chatsStore.storeChatsDictionary()
+            }
+            .onChange(of: selected) { newValue in
+                chatsStore.localChats[chatModel.chat.id!]!.pfpLocal = selected
+                if newValue != nil {
+                    chatsStore.localChats[chatModel.chat.id!]!.pfpUrl = nil
+                }
+                chatsStore.storeChatsDictionary()
+            }
         }
     }
     

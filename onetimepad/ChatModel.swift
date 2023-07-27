@@ -29,6 +29,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
     var name: String?
     var padLength: Int?
     var pfpUrl: URL?
+    var pfpLocal: String?
     var latestLocalMessage: String?
     
     private enum CodingKeys: String, CodingKey {
