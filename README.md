@@ -25,8 +25,11 @@ This could instead be a fun feature living on top of a secure messaging app
 <br>
 
 ## V1
+Core features from above:
+
 <img src="assets/vid2.gif" style="width: 200px;">
 
 ## V2
+Working messaging app built around this concept:
 
 <img src="assets/IMG_4300.PNG" style="width: 200px;"> <img src="assets/IMG_4303.PNG" style="width: 200px;"> <img src="assets/IMG_4301.PNG" style="width: 200px;"> <img src="assets/IMG_4302.PNG" style="width: 200px;">
