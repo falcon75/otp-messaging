@@ -189,12 +189,23 @@ class ChatModel: ObservableObject {
                         resultBytes.append(msg.cipherBytes[i] ^ self.code[i])
                     }
                     
+                    // delete chat
                     self.db.collection("chats").document(self.chat.id!).collection("messages").document(msg.id!).delete() { err in
                         if let err = err {
                             print("Error removing document: \(err)")
                             return
                         } else {
                             print("Document successfully removed!")
+                        }
+                    }
+                    
+                    // empty sender field
+                    let update: [String: Any] = ["latestSender": ""]
+                    self.db.collection("chats").document(self.chat.id!).updateData(update) { error in
+                        if let error = error {
+                            print("Error updating document: \(error)")
+                        } else {
+                            print("New message status updated successfully")
                         }
                     }
                     
@@ -253,7 +264,7 @@ class ChatModel: ObservableObject {
         
         do {
             let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg) // add message
-            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": "hi", "latestTime": Date()] // update chat
+            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": "hi", "latestTime": Date()] // set sender field
             db.collection("chats").document(chat.id!).updateData(update) { error in
                 if let error = error {
                     print("Error updating document: \(error)")

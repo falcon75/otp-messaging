@@ -101,7 +101,7 @@ struct MainView: View {
                                                     .truncationMode(.tail)
                                                 Spacer()
                                             }.padding([.leading], 4)
-                                            if chat.newMessage ?? true {
+                                            if (chat.newMessage ?? true) || (chat.latestSender == model.otherUser(chat: chat))  {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: "lock")
                                                     Text("New Message")

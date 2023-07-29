@@ -174,6 +174,7 @@ struct BubbleView: View {
                 }
                 Spacer()
                 Text(text)
+                    .textSelection(.enabled)
                     .padding([.top, .bottom], 10)
                     .padding([.leading, .trailing], 14)
                     .background(.black)
@@ -183,6 +184,7 @@ struct BubbleView: View {
                     
             } else {
                 Text(text)
+                    .textSelection(.enabled)
                     .padding([.top, .bottom], 10)
                     .padding([.leading, .trailing], 12)
                     .background(Color.gray.opacity(0.4))
