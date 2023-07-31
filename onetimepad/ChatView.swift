@@ -12,6 +12,7 @@ import Photos
 
 struct ChatView: View {
     @ObservedObject private var chatsStore = ChatsStore.shared
+    @StateObject private var chatStore = ChatStore.shared
     @StateObject var chatmodel: ChatModel
     @State private var isPopoverPresented = false
     private var debug: Bool
@@ -62,8 +63,13 @@ struct ChatView: View {
                             Text(chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").fontWeight(.bold).lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
-                            Text("📖 " + formatNumber(chatmodel.code.count))
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                            if (chatmodel.code.count <= chatmodel.messageText.count) {
+                                Text("📖 0")
+                                    .foregroundColor(.red)
+                            } else {
+                                Text("📖 " + formatNumber(chatmodel.code.count - chatmodel.messageText.count))
+                                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                            }
                         }
                         Spacer()
                         Image(systemName: "square.and.pencil")
@@ -81,12 +87,20 @@ struct ChatView: View {
             }
             .background(Color.offWhite)
             Divider()
+            if chatmodel.code.count <= chatmodel.messageText.count {
+                HStack {
+                    Text("Pad (📖) empty, share more characters by AirDrop with + on the home screen.")
+                        .font(.caption)
+                }.padding()
+                .background(Color.offWhite)
+                Divider()
+            }
             ScrollView(showsIndicators: false) {
                 ScrollViewReader { scrollViewProxy in
                     ZStack {
                         LazyVStack(spacing: 3) {
                             ForEach(chatmodel.messagesDec.indices, id: \.self) { index in
-                                let message = debug ? sampleMessages[index] : chatmodel.messagesDec[index]
+                                let message = chatmodel.messagesDec[index]
                                 if index == 0 {
                                     BubbleView(text: message.text, time: message.date, isFromCurrentUser: message.sender == UserManager.shared.currentUser!.uid)
                                         .padding([.top], 10)
@@ -122,7 +136,6 @@ struct ChatView: View {
                     .cornerRadius(17)
                 Button {
                     chatmodel.send(plain: chatmodel.messageText)
-                    chatmodel.messageText = ""
                 } label: {
                     HStack(spacing: -2) {
                         Image(systemName: "lock.fill")
@@ -135,19 +148,22 @@ struct ChatView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 17))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .opacity(chatmodel.messageText == "" ? 0.5 : 1.0)
+                    .opacity(chatmodel.messageText == "" || chatmodel.code.count <= chatmodel.messageText.count ? 0.5 : 1.0)
                     .font(.title)
                 }
-                .disabled(chatmodel.messageText == "")
+                .disabled(chatmodel.messageText == "" || chatmodel.code.count <= chatmodel.messageText.count)
             }
             .padding()
             .background(Color.offWhite)
         }
         .onAppear {
             chatmodel.isViewDisplayed = true
+            chatmodel.attach()
         }
         .onDisappear {
             chatmodel.isViewDisplayed = false
+            chatmodel.listener?.remove()
+            chatmodel.listener = nil
         }
         .navigationBarHidden(true)
     }
@@ -372,13 +388,6 @@ struct ChatOptionsView: View {
         }
     }
 }
-
-let sampleMessages = [
-    MessageDec(id: "123", date: Date(), text: "hi there mate hows it going wondering if you want to go to the park, alright, that automatically looks fine? great stuff", sender: "bob"),
-    MessageDec(id: "123", date: Date(), text: "hi there", sender: "bob"),
-    MessageDec(id: "123", date: Date(), text: "hi there mate hows it going wondering if you want to go to the park, alright, that automatically looks fine? great stuff", sender: "steve"),
-    MessageDec(id: "123", date: Date(), text: "h", sender: "steve")
-]
 
 //struct ChatView_Previews: PreviewProvider {
 //    static var previews: some View {

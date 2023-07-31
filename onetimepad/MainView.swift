@@ -8,8 +8,32 @@
 import SwiftUI
 
 
+struct NavLink<Label, Destination>: View where Label: View, Destination: View {
+    @StateObject private var chatsStore = ChatsStore.shared
+    let destination: Destination
+    let label: () -> Label
+    var chatId: String
+    @State private var isActive = false
+    
+    var body: some View {
+        Button(action: {
+            print("Tapped the custom button")
+            withAnimation { chatsStore.localChats[chatId]!.newMessage = false }
+            chatsStore.storeChatsDictionary()
+            isActive = true
+        }) {
+            label()
+        }
+        .background(
+            NavigationLink("", destination: destination, isActive: $isActive)
+                .opacity(0) // Hide the default NavLink link
+        )
+    }
+}
+
 struct MainView: View {
     @StateObject private var chatsStore = ChatsStore.shared
+    @StateObject private var chatStore = ChatStore.shared
     @ObservedObject private var userManager = UserManager.shared
     @StateObject private var model = Model()
     
@@ -44,6 +68,7 @@ struct MainView: View {
             }
         } catch {
             print("Failed to share codebook: \(error)")
+            return
         }
         ChatStore.shared.pendingSC = sc
     }
@@ -69,9 +94,7 @@ struct MainView: View {
                         VStack {
                             Divider()
                             ForEach(ChatsStore.shared.sortedChats) { chat in
-                                NavigationLink(isActive: $isNavActive) {
-                                    ChatView(chat: chat, uid: model.otherUser(chat: chat))
-                                } label: {
+                                NavLink(destination: ChatView(chat: chat, uid: model.otherUser(chat: chat)), label: {
                                     HStack(spacing: 10) {
                                         HStack {
                                             if let url = chatsStore.localChats[chat.id!]!.pfpUrl {
@@ -122,7 +145,7 @@ struct MainView: View {
                                                         .truncationMode(.tail)
                                                     Spacer()
                                                 }
-                                                .padding(5)
+                                                .padding([.top, .bottom, .leading], 5)
                                                 .font(.callout)
                                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                             }
@@ -140,17 +163,11 @@ struct MainView: View {
                                                 }
                                             }
                                         }.font(.callout)
-                                        
                                     }
                                     .foregroundColor(colorScheme == .dark ? .white : .black)
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .onTapGesture {
-                                        isNavActive = true
-                                        withAnimation { chatsStore.localChats[chat.id!]!.newMessage = false }
-                                        chatsStore.storeChatsDictionary()
-                                    }
-                                }
+                                }, chatId: chat.id!)
                                 Spacer()
                                 Divider()
                             }
@@ -261,36 +278,25 @@ func formatDateString(date: Date) -> String {
     }
 }
 
-let sampleChats: [Chat] = [
-    Chat(id: "1", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve Woz"),
-    Chat(id: "2", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve J"),
-    Chat(id: "3", latestMessage: "hi", latestSender: "Bob", latestTime: Date(), typing: "Bob", members: ["bob", "alice"], name: "Steve Jobsworth the Third")
-]
-
 func formatNumber(_ number: Int) -> String {
     let sign = (number < 0) ? "-" : ""
     let num = abs(number)
     
-    let numberFormatter = NumberFormatter()
-    numberFormatter.numberStyle = .decimal
-    numberFormatter.minimumSignificantDigits = 1
-    numberFormatter.maximumSignificantDigits = 3
-    
     switch num {
     case 0..<1_000:
-        return "\(sign)\(numberFormatter.string(from: NSNumber(value: num))!)"
+        return "\(sign)\(num)"
     case 1_000..<1_000_000:
-        let thousands = num / 1_000
-        return "\(sign)\(numberFormatter.string(from: NSNumber(value: thousands))!)k"
+        let thousands = Double(num) / 1_000.0
+        return "\(sign)\(String(format: "%.3g", thousands))k"
     case 1_000_000..<1_000_000_000:
-        let millions = num / 1_000_000
-        return "\(sign)\(numberFormatter.string(from: NSNumber(value: millions))!)M"
+        let millions = Double(num) / 1_000_000.0
+        return "\(sign)\(String(format: "%.3g", millions))M"
     case 1_000_000_000..<1_000_000_000_000:
-        let billions = num / 1_000_000_000
-        return "\(sign)\(numberFormatter.string(from: NSNumber(value: billions))!)B"
+        let billions = Double(num) / 1_000_000_000.0
+        return "\(sign)\(String(format: "%.3g", billions))B"
     default:
-        let trillions = num / 1_000_000_000_000
-        return "\(sign)\(numberFormatter.string(from: NSNumber(value: trillions))!)T"
+        let trillions = Double(num) / 1_000_000_000_000.0
+        return "\(sign)\(String(format: "%.3g", trillions))T"
     }
 }
 

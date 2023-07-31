@@ -14,7 +14,7 @@ class ChatsStore: ObservableObject {
     static let shared = ChatsStore()
     @Published var localChats: [String: Chat] = [:] {
         didSet {
-            sortedChats = Array(localChats.values).sorted(by: { $0.latestTime < $1.latestTime })
+            sortedChats = Array(localChats.values).sorted(by: { $0.latestTime > $1.latestTime })
         }
     }
     private var chats: [Chat] = []
@@ -26,6 +26,7 @@ class ChatsStore: ObservableObject {
         var latestTime: Date
         var typing: String
         var members: [String]
+        var newPad: Bool
         var newMessage: Bool?
         var name: String?
         var padLength: Int?
@@ -37,7 +38,7 @@ class ChatsStore: ObservableObject {
     func storeChatsDictionary() {
         do {
             let encodedDictionary = localChats.mapValues { chat -> EncodedChat in
-                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, newMessage: chat.newMessage, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, pfpLocal: chat.pfpLocal, latestLocalMessage: chat.latestLocalMessage)
+                return EncodedChat(id: chat.id, latestMessage: chat.latestMessage, latestSender: chat.latestSender, latestTime: chat.latestTime, typing: chat.typing, members: chat.members, newPad: chat.newPad, newMessage: chat.newMessage, name: chat.name, padLength: chat.padLength, pfpUrl: chat.pfpUrl, pfpLocal: chat.pfpLocal, latestLocalMessage: chat.latestLocalMessage)
             }
             
             let encoder = JSONEncoder()
@@ -58,7 +59,7 @@ class ChatsStore: ObservableObject {
             let encodedDictionary = try decoder.decode([String: EncodedChat].self, from: userData)
             
             let decodedDictionary = encodedDictionary.mapValues { encodedChat -> Chat in
-                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, newMessage: encodedChat.newMessage, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, pfpLocal: encodedChat.pfpLocal, latestLocalMessage: encodedChat.latestLocalMessage)
+                return Chat(id: encodedChat.id, latestMessage: encodedChat.latestMessage, latestSender: encodedChat.latestSender, latestTime: encodedChat.latestTime, typing: encodedChat.typing, members: encodedChat.members, newPad: encodedChat.newPad, newMessage: encodedChat.newMessage, name: encodedChat.name, padLength: encodedChat.padLength, pfpUrl: encodedChat.pfpUrl, pfpLocal: encodedChat.pfpLocal, latestLocalMessage: encodedChat.latestLocalMessage)
             }
             localChats = decodedDictionary
         } catch {
@@ -79,6 +80,16 @@ class Model: ObservableObject {
         chatsStore.retrieveChatsDictionary()
         print(chatsStore.localChats)
         attach()
+        
+        if let token = UserDefaults.standard.string(forKey: "token") {
+            db.collection("users").document(userManager.currentUser!.uid).setData(["token": token]) { error in
+                if let error = error {
+                    print("Error updating document: \(error)")
+                } else {
+                    print("Token updated successfully")
+                }
+            }
+        }
     }
     
     func otherUser(chat: Chat) -> String {
@@ -116,14 +127,44 @@ class Model: ObservableObject {
             let sc = try JSONDecoder().decode(ShareCodebook.self, from: data)
             
             do {
-                let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestSender: "", latestTime: Date(), typing: "", members: [sc.id, user.uid], pfpLocal: pfpList.randomElement()))
-                let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
-                ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
+                if let chatData = ChatStore.shared.getChat(for: sc.id) {
+                    let codebook = chatData.codebook + sc.codebook
+                    let chatData1 = ChatData(name: sc.id, codebook: codebook, messages: chatData.messages)
+                    let filtered = chatsStore.localChats.values.filter { otherUser(chat: $0) == sc.id }
+                    guard let chat = filtered.first else {
+                        print("g14")
+                        return
+                    }
+                    if filtered.count != 1 {
+                        print("g15")
+                        return
+                    }
+                    ChatStore.shared.storeChat(uid: sc.id, chatData: chatData1)
+                    ChatStore.shared.changes.toggle()
+                    chatsStore.localChats[chat.id!]!.padLength = codebook.count
+                    self.chatsStore.storeChatsDictionary()
+                    print("updating newPad")
+                    let update = ["newPad": true]
+                    self.db.collection("chats").document(chat.id!).updateData(update) { error in
+                        if let error = error {
+                            print("Error updating document: \(error)")
+                        } else {
+                            print("set new pad to true")
+                        }
+                    }
+                } else {
+                    let _ = try db.collection("chats").addDocument(from: Chat(latestMessage: "", latestSender: "", latestTime: Date(), typing: "", members: [sc.id, user.uid], newPad: true))
+                    let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
+                    ChatStore.shared.storeChat(uid: sc.id, chatData: chatData)
+                    ChatStore.shared.changes.toggle()
+                }
             } catch {
                 print(error)
+                return
             }
         } catch {
             print("Failed to handle recieved codebook: \(error)")
+            return
         }
     }
 
@@ -156,13 +197,14 @@ class Model: ObservableObject {
                     if self.chatsStore.localChats[chatId] == nil { // new chat not in chatsStore, add
                         self.chatsStore.localChats[chatId] = chat
                         self.chatsStore.localChats[chatId]!.name = chatId
+                        self.chatsStore.localChats[chatId]!.pfpLocal = pfpList.randomElement()
                         self.chatsStore.storeChatsDictionary()
                     } else { // update chat, excluding local properties
                         let pl = self.chatsStore.localChats[chatId]!.padLength
                         let name = self.chatsStore.localChats[chatId]!.name
                         let new = self.chatsStore.localChats[chatId]!.newMessage
                         let url = self.chatsStore.localChats[chatId]!.pfpUrl
-                        let pfpLocal = self.chatsStore.localChats[chatId]!.pfpLocal
+                        var pfpLocal = self.chatsStore.localChats[chatId]!.pfpLocal
                         let llm = self.chatsStore.localChats[chatId]!.latestLocalMessage
                         self.chatsStore.localChats[chatId]! = chat
                         self.chatsStore.localChats[chatId]!.newMessage = new
@@ -177,17 +219,41 @@ class Model: ObservableObject {
                 
                 if let sc = ChatStore.shared.pendingSC {
                     for change in snapshot.documentChanges {
+                        guard var chat = try? change.document.data(as: Chat.self) else {
+                            print("Error: could not cast to Msg")
+                            print(change.document.data())
+                            return
+                        }
+                        if !chat.newPad {
+                            return
+                        }
+                        let uid =  self.otherUser(chat: chat)
                         if change.type == .added {
-                            let addedDocument = change.document
-                            guard var chat = try? addedDocument.data(as: Chat.self) else {
-                                print("Error: could not cast to Msg")
-                                print(addedDocument.data())
-                                return
-                            }
-                            let uid =  self.otherUser(chat: chat)
                             chat.name = uid
                             let chatData = ChatData(name: sc.id, codebook: sc.codebook, messages: [])
                             ChatStore.shared.storeChat(uid: uid, chatData: chatData)
+                            ChatStore.shared.changes.toggle()
+                            self.chatsStore.localChats[chat.id!]!.padLength = sc.codebook.count
+                            self.chatsStore.storeChatsDictionary()
+                        } else if change.type == .modified {
+                            guard let chatData = ChatStore.shared.getChat(for: uid) else {
+                                print("f1")
+                                return
+                            }
+                            let codebook = chatData.codebook + sc.codebook
+                            let chatData1 = ChatData(name: chatData.name, codebook: codebook, messages: chatData.messages)
+                            ChatStore.shared.storeChat(uid: uid, chatData: chatData1)
+                            ChatStore.shared.changes.toggle()
+                            self.chatsStore.localChats[chat.id!]!.padLength = codebook.count
+                            self.chatsStore.storeChatsDictionary()
+                        }
+                        let update = ["newPad": false]
+                        self.db.collection("chats").document(chat.id!).updateData(update) { error in
+                            if let error = error {
+                                print("Error updating document: \(error)")
+                            } else {
+                                print("set new pad to false")
+                            }
                         }
                     }
                 }

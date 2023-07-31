@@ -10,6 +10,7 @@ import FirebaseCore
 import FirebaseAuth
 import Combine
 import Foundation
+import FirebaseMessaging
 
 
 struct User: Equatable {
@@ -22,15 +23,65 @@ class UserManager: ObservableObject {
     private init() {}
 }
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     var userManager: UserManager!
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        UNUserNotificationCenter.current().delegate = self
+
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(
+          options: authOptions,
+          completionHandler: { _, _ in
+//              Messaging.messaging().token { token, error in
+//                if let error = error {
+//                  print("Error fetching FCM registration token: \(error)")
+//                } else if let token = token {
+//                  print("FCM registration token: \(token)")
+//                  UserDefaults.standard.setValue(token, forKey: "token")
+//                }
+//              }
+          }
+        )
+
+        application.registerForRemoteNotifications()
+        
         FirebaseApp.configure()
+        
+        Messaging.messaging().delegate = self
+        
+        
+        Messaging.messaging().token { token, error in
+          if let error = error {
+            print("Error fetching FCM registration token: \(error)")
+          } else if let token = token {
+            print("FCM registration token: \(token)")
+//            self.fcmRegTokenMessage.text  = "Remote FCM registration token: \(token)"
+          }
+        }
+        
         Auth.auth().signInAnonymously { authResult, error in
             guard let user = authResult?.user else { return }
             UserManager.shared.currentUser = User(uid: user.uid)
         }
         return true
+    }
+    
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+      print("Firebase registration token: \(String(describing: fcmToken))")
+
+      let dataDict: [String: String] = ["token": fcmToken ?? ""]
+      NotificationCenter.default.post(
+        name: Notification.Name("FCMToken"),
+        object: nil,
+        userInfo: dataDict
+      )
+      UserDefaults.standard.setValue(dataDict["token"], forKey: "token")
+    }
+    
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+      Messaging.messaging().apnsToken = deviceToken
     }
 }
 

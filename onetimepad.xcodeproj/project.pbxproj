@@ -13,6 +13,7 @@
 		2202FD5D28AD7033007FD927 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD5C28AD7033007FD927 /* FirebaseFirestore */; };
 		2202FD6228AD7125007FD927 /* FirebaseFirestoreSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2202FD6128AD7125007FD927 /* FirebaseFirestoreSwift */; };
 		2242FA0B2A570408002A8153 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2242FA0A2A570408002A8153 /* Model.swift */; };
+		2244F3D32A74330A004EA409 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 2244F3D22A74330A004EA409 /* FirebaseMessaging */; };
 		2247BA78288C2EF3005E25AE /* onetimepadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA77288C2EF3005E25AE /* onetimepadApp.swift */; };
 		2247BA7A288C2EF3005E25AE /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2247BA79288C2EF3005E25AE /* ChatView.swift */; };
 		2247BA7C288C2EF5005E25AE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2247BA7B288C2EF5005E25AE /* Assets.xcassets */; };
@@ -44,6 +45,7 @@
 			files = (
 				2202FD5928AD7033007FD927 /* FirebaseAnalyticsSwift in Frameworks */,
 				2202FD5B28AD7033007FD927 /* FirebaseAuth in Frameworks */,
+				2244F3D32A74330A004EA409 /* FirebaseMessaging in Frameworks */,
 				2202FD5D28AD7033007FD927 /* FirebaseFirestore in Frameworks */,
 				2202FD6228AD7125007FD927 /* FirebaseFirestoreSwift in Frameworks */,
 			);
@@ -52,11 +54,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2244F3D12A74330A004EA409 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2247BA6B288C2EF3005E25AE = {
 			isa = PBXGroup;
 			children = (
 				2247BA76288C2EF3005E25AE /* onetimepad */,
 				2247BA75288C2EF3005E25AE /* Products */,
+				2244F3D12A74330A004EA409 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -115,6 +125,7 @@
 				2202FD5A28AD7033007FD927 /* FirebaseAuth */,
 				2202FD5C28AD7033007FD927 /* FirebaseFirestore */,
 				2202FD6128AD7125007FD927 /* FirebaseFirestoreSwift */,
+				2244F3D22A74330A004EA409 /* FirebaseMessaging */,
 			);
 			productName = onetimepad;
 			productReference = 2247BA74288C2EF3005E25AE /* onetimepad.app */;
@@ -307,6 +318,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = onetimepad/onetimepad.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"onetimepad/Preview Content\"";
@@ -330,6 +342,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = sam.onetimepad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -342,6 +355,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = onetimepad/onetimepad.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"onetimepad/Preview Content\"";
@@ -365,6 +379,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = sam.onetimepad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -433,6 +448,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2202FD6028AD7125007FD927 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestoreSwift;
+		};
+		2244F3D22A74330A004EA409 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2202FD5728AD7033007FD927 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

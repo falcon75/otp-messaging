@@ -25,6 +25,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
     var latestTime: Date
     var typing: String
     var members: [String]
+    var newPad: Bool
     var newMessage: Bool?
     var name: String?
     var padLength: Int?
@@ -33,7 +34,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
     var latestLocalMessage: String?
     
     private enum CodingKeys: String, CodingKey {
-        case id, latestMessage, latestSender, latestTime, typing, members
+        case id, latestMessage, latestSender, latestTime, typing, members, newPad
     }
 }
 
@@ -55,11 +56,13 @@ struct ChatData: Codable {
     var messages: [MessageDec]
 }
 
-class ChatStore {
+class ChatStore: ObservableObject {
     static let shared = ChatStore()
     var pendingSC: ShareCodebook? = nil
+    @Published var changes: Bool = false
     
     func storeChat(uid: String, chatData: ChatData) {
+        print("Stored: \(chatData.codebook.count)")
         let jsonEncoder = JSONEncoder()
         if let encoded = try? jsonEncoder.encode(chatData) {
             let defaults = UserDefaults.standard
@@ -82,6 +85,7 @@ class ChatStore {
 class ChatModel: ObservableObject {
     private var chatsStore = ChatsStore.shared
     private let db = Firestore.firestore()
+    var listener: ListenerRegistration?
     @Published var chat: Chat
     @Published var isViewDisplayed = false
     var otherUID: String
@@ -97,56 +101,30 @@ class ChatModel: ObservableObject {
     private var timer: Timer?
     @Published var name: String = "" {
         didSet {
+            print("name change, storing")
             ChatStore.shared.storeChat(uid: otherUID, chatData: ChatData(name: name, codebook: code, messages: messagesDec))
         }
     }
-    @Published var messageText: String = "" {
-        didSet {
-            if !messageText.isEmpty {
-//                writeTyping(typing: true)
-                print("typing set true")
-                timer?.invalidate()
-                timer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(timerExpired), userInfo: nil, repeats: false)
-            }
-        }
-    }
+    @Published var messageText: String = ""
     
     init(chat: Chat, otherUID: String) {
-//        print("chat model initialised for: \(otherUID)")
         self.chat = chat
         self.otherUID = otherUID
         let c = ChatStore.shared.getChat(for: otherUID)!
         self.code = c.codebook
         self.messagesDec = c.messages
         self.name = c.name
-        attach()
     }
     
-    @objc private func timerExpired() {
-//        writeTyping(typing: false)
-        print("typing set false")
-        timer = nil
-    }
-    
-    func writeTyping(typing: Bool) {
-        guard let user = UserManager.shared.currentUser else {
-            print("No User")
-            return
-        }
-        let update: [String: Any] = ["typing": typing ? user.uid : ""]
-        db.collection("chats").document(chat.id!).updateData(update) { error in
-            if let error = error {
-                print("Error updating document: \(error)")
-            } else {
-                print("")
-            }
-        }
+    func fetchLocal () {
+        let c = ChatStore.shared.getChat(for: self.otherUID)!
+        self.code = c.codebook
     }
     
     var justProcessed: [String] =  []
     
     func attach() {
-        db.collection("chats")
+        listener = db.collection("chats")
             .document(chat.id!)
             .collection("messages")
             .order(by: "date", descending: false)
@@ -160,6 +138,8 @@ class ChatModel: ObservableObject {
                     print("Snapshot nil")
                     return
                 }
+                
+                print("listener fire in: \(Unmanaged.passUnretained(self).toOpaque())")
                     
                 for document in snapshot.documents {
                     guard let msg = try? document.data(as: Message.self) else {
@@ -208,12 +188,14 @@ class ChatModel: ObservableObject {
                             print("New message status updated successfully")
                         }
                     }
-                    
+                    let plain = self.bytesToString(resultBytes) ?? "Err:12"
                     self.code = Array(self.code[msg.cipherBytes.count...])
-                    self.messagesDec.append(MessageDec(id: UUID().uuidString, date: msg.date, text: self.bytesToString(resultBytes) ?? "Err:12", sender: msg.sender))
-                    self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = "hi"
+                    let newMsg = MessageDec(id: UUID().uuidString, date: msg.date, text: plain, sender: msg.sender)
+                    self.messagesDec.append(newMsg)
+                    self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = plain
                     self.chatsStore.localChats[self.chat.id!]!.newMessage = !self.isViewDisplayed
                     self.chatsStore.storeChatsDictionary()
+                    print("saving the new codebook state: \(self.code.count) and messages: \(newMsg.text)")
                     ChatStore.shared.storeChat(uid: self.otherUID, chatData: ChatData(name: self.name, codebook: self.code, messages: self.messagesDec))
                 }
             }
@@ -225,16 +207,6 @@ class ChatModel: ObservableObject {
     
     func bytesToString(_ bytes: [UInt16]) -> String? {
         return String(decoding: bytes, as: UTF16.self)
-    }
-    
-    func generateRandomBytes(count: Int) -> [UInt16] {
-        var randomBytes = [UInt16](repeating: 0, count: count)
-        let result = SecRandomCopyBytes(kSecRandomDefault, 2*count, &randomBytes)
-        if result == errSecSuccess {
-            return randomBytes
-        } else {
-            fatalError("Failed to generate random bytes.")
-        }
     }
     
     func send(plain: String){
@@ -273,6 +245,7 @@ class ChatModel: ObservableObject {
                 }
             }
             code = Array(code[msg.cipherBytes.count...])
+            messageText = ""
             messagesDec.append(msgDec)
             chatsStore.localChats[chat.id!]!.latestLocalMessage = plain
             chatsStore.storeChatsDictionary()
