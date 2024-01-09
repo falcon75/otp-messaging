@@ -15,80 +15,49 @@ struct ShopView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Spacer()
-                Button {
-                    presentationMode.wrappedValue.dismiss()
-                } label: {
-                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
-                }
+                Text("Secret Agent Mode 🕵🏻‍♂️")
+                    .font(.title)
+                    .fontWeight(.bold)
+//                Spacer()
+//                Button {
+//                    presentationMode.wrappedValue.dismiss()
+//                } label: {
+//                    Image(systemName: "arrow.down").font(.title).foregroundColor(colorScheme == .dark ? .white : .black)
+//                        .padding()
+//                }
             }
-            Spacer()
+            Text("Hostile powers trying to trace your every move? Scramble as many messages as you need with secret agent mode.")
+                .font(.callout)
+                .fontWeight(.bold)
+                .foregroundColor(.gray)
+                .padding(0)
+            Text("Share unlimited characters for your chats, for as long as this app exists, hopefully forever.")
+                .padding(0)
             Button {
-                premium = false
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 30)
-                        .foregroundColor(.gray)
-                        .frame(height: 150)
-                        .shadow(color: Color.darkShadow, radius: 8, x: 8, y: 8)
-                    RoundedRectangle(cornerRadius: 30)
-                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart2, Color.borderGradientEnd2]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
-                        .frame(height: 150)
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Text("🔒 Standard")
-                                .foregroundColor(.white)
-                                .font(.title)
-                            Text("1000 Characters / Day")
-                                .foregroundColor(.white)
-                                .font(.body)
-                        }
-                        Spacer()
-                    }
-                    Text("Free")
+                premium.toggle()
+            } label : {
+                HStack {
+                    Spacer()
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(.green)
+                            .frame(width: 200, height: 60)
+                            .shadow(color: Color.darkShadow, radius: 8, x: 8, y: 8)
+                        RoundedRectangle(cornerRadius: 30)
+                            .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.darkGreen, Color.lightGreen]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                            .frame(width: 200, height: 60)
+                        Text(premium ? "Upgraded" : "Upgrade  •  £2")
                             .foregroundColor(.white)
-                            .font(.callout)
-                            .offset(x: 140, y: -50)
-                    Image(systemName: premium ? "circle" : "checkmark.circle.fill").foregroundColor(colorScheme == .dark ? .black : .white).padding().offset(x: 140).font(.title)
-                }
-            }
-            Button {
-                premium = true
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 30)
-                        .fill(.green)
-                        .frame(height: 150)
-                        .shadow(color: Color.darkShadow, radius: 8, x: 8, y: 8)
-                    RoundedRectangle(cornerRadius: 30)
-                        .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.darkGreen, Color.lightGreen]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
-                        .frame(height: 150)
-                    HStack {
-                        Spacer()
-                        VStack{
-                            Text("💸 Premium")
-                                .foregroundColor(.white)
-                                .font(.title)
-                            Text("Unlimited Messages")
-                                .foregroundColor(.white)
-                                .font(.body)
-                            Text("Unlock All Themes")
-                                .foregroundColor(.white)
-                                .font(.body)
-                        }
-                        Spacer()
+                            .fontWeight(.bold)
                     }
-                    Text("£1 / Month")
-                        .foregroundColor(.white)
-                        .font(.callout)
-                        .offset(x: 125, y: -50)
-                    Image(systemName: !premium ? "circle" : "checkmark.circle.fill").foregroundColor(colorScheme == .dark ? .black : .white).padding().offset(x: 140).font(.title)
+                    Spacer()
                 }
             }
+            
         }.padding()
+        
     }
 }
 
@@ -96,13 +65,16 @@ struct ShopView: View {
 
 extension Color {
     static let offWhite = Color(red: 240/255, green: 240/255, blue: 240/255)
+    static let offWhiteDark = Color(red: 30/255, green: 30/255, blue: 30/255)
     static let darkShadow = Color(red: 220/255, green: 220/255, blue: 220/255)
     static let lightShadow = Color.white
     static let darkGreen = Color(red: 41/255, green: 163/255, blue: 61/255)
     static let lightGreen = Color(red: 56/255, green: 223/255, blue: 83/255)
     static let borderGradientStart = Color(red: 230/255, green: 230/255, blue: 230/255)
     static let borderGradientEnd = Color.white
-    
+    static let borderGradientStartDark = Color(red: 50/255, green: 50/255, blue: 50/255)
+    static let fadeOutShadowDark = Color(red: 30/255, green: 30/255, blue: 30/255)
+    static let borderGradientEndDark = Color.black
     static let base: Double = 190
     static let borderGradientEnd2 = Color(red: base/255, green: base/255, blue: base/255)
     static let borderGradientStart2 = Color(red: (base + 20)/255, green: (base + 20)/255, blue: (base + 20)/255)

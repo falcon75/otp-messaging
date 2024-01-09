@@ -2,26 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>CFBundleDocumentTypes</key>
 	<array>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string></string>
-			<key>LSHandlerRank</key>
-			<string>Default</string>
-		</dict>
-		<dict/>
 		<dict>
 			<key>CFBundleTypeName</key>
 			<string>JSON Codebook</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>public.json</string>
 			</array>
-			<key>LSSupportsOpeningDocumentsInPlace</key>
-			<true/>
 		</dict>
 	</array>
 </dict>

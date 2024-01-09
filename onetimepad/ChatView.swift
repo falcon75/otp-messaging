@@ -36,6 +36,8 @@ struct ChatView: View {
                 }
                 Button {
                     isPopoverPresented = true
+                    let c = ChatStore.shared.getChat(for: chatmodel.otherUID)!
+                    chatmodel.code = c.codebook
                 } label: {
                     HStack {
                         HStack {
@@ -72,9 +74,9 @@ struct ChatView: View {
                             }
                         }
                         Spacer()
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: "gearshape.fill")
                             .font(.title2)
-                            .padding()
+                            .padding([.trailing])
                             .foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .background(colorScheme == .dark ? Color.black : Color.white)
@@ -85,7 +87,7 @@ struct ChatView: View {
                     ChatOptionsView(selected: chatsStore.localChats[chatmodel.chat.id!]!.pfpLocal, chatModel: chatmodel, name: chatsStore.localChats[chatmodel.chat.id!]!.name ?? "").presentationDetents([.medium])
                 }
             }
-            .background(Color.offWhite)
+            .background(colorScheme == .dark ? Color.offWhiteDark : Color.offWhite)
             Divider()
             if chatmodel.code.count <= chatmodel.messageText.count {
                 HStack {
@@ -154,7 +156,7 @@ struct ChatView: View {
                 .disabled(chatmodel.messageText == "" || chatmodel.code.count <= chatmodel.messageText.count)
             }
             .padding()
-            .background(Color.offWhite)
+            .background(colorScheme == .dark ? Color.offWhiteDark : Color.offWhite)
         }
         .onAppear {
             chatmodel.isViewDisplayed = true
@@ -193,7 +195,7 @@ struct BubbleView: View {
                     .textSelection(.enabled)
                     .padding([.top, .bottom], 10)
                     .padding([.leading, .trailing], 14)
-                    .background(.black)
+                    .background(colorScheme == .dark ? Color.gray.opacity(0.4) : .black)
                     .foregroundColor(.white)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .trailing)
@@ -203,7 +205,7 @@ struct BubbleView: View {
                     .textSelection(.enabled)
                     .padding([.top, .bottom], 10)
                     .padding([.leading, .trailing], 12)
-                    .background(Color.gray.opacity(0.4))
+                    .background(Color.gray.opacity(0.2))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                     .cornerRadius(cornerRadius)
                     .frame(maxWidth: UIScreen.main.bounds.width * maxWidthFactor, alignment: .leading)
@@ -222,7 +224,7 @@ struct BubbleView: View {
     }
 }
 
-let pfpList = ["pfp1", "pfp2", "pfp3", "pfp4"]
+let pfpList = ["liftoff", "refraction", "lonepine", "palebluedot", "gigi", "jas", "flight", "simon", "fin"]
 
 struct ChatOptionsView: View {
     @ObservedObject private var chatsStore = ChatsStore.shared
@@ -273,25 +275,24 @@ struct ChatOptionsView: View {
                             .frame(width: 190, height: 190)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             RoundedRectangle(cornerRadius: 22)
-                            .strokeBorder(LinearGradient(gradient: Gradient(colors: [Color.borderGradientStart, Color.borderGradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
+                                .strokeBorder(LinearGradient(gradient: Gradient(colors: [colorScheme == .dark ? Color.borderGradientStartDark : Color.borderGradientStart, colorScheme == .dark ? Color.borderGradientEndDark : Color.borderGradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 5)
                             .frame(width: 210, height: 210)
                         }
                     }
                     HStack(spacing: 10) {
-                        Button {
-                            showImagePicker = true
-                        } label: {
-                            Image(systemName: "photo")
-                                .font(.title)
-                                .frame(width: 80, height: 80)
-                                .background(Color.offWhite)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .padding([.bottom], 8)
-                        }
                         ZStack {
-                            ScrollView(.horizontal) {
+                            ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
+                                    Button {
+                                        showImagePicker = true
+                                    } label: {
+                                        Image(systemName: "photo")
+                                            .font(.title)
+                                            .frame(width: 80, height: 80)
+                                            .background(colorScheme == .dark ? Color.black : Color.offWhite)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    }
                                     ForEach(pfpList, id: \.self) { pfp in
                                         Button {
                                             withAnimation { selected = pfp }
@@ -303,7 +304,7 @@ struct ChatOptionsView: View {
                                                     .aspectRatio(contentMode: .fill)
                                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                                     .padding(5)
-                                                    .background(Color.offWhite)
+                                                    .background(colorScheme == .dark ? Color.offWhiteDark : Color.offWhite)
                                                     .clipShape(RoundedRectangle(cornerRadius: 17))
                                                     .frame(width: 80, height: 80)
                                             } else {
@@ -314,7 +315,6 @@ struct ChatOptionsView: View {
                                                     .frame(width: 80, height: 80)
                                             }
                                         }
-                                        .padding([.bottom], 8)
                                     }
                                 }
                             }
@@ -324,8 +324,9 @@ struct ChatOptionsView: View {
                                     .fill(
                                         LinearGradient(
                                             gradient: Gradient(stops: [
-                                                .init(color: Color.white.opacity(0), location: 0),
-                                                .init(color: Color.white.opacity(1), location: 1)
+                                                .init(color: colorScheme == .dark ? Color.fadeOutShadowDark.opacity(0) : Color.white.opacity(0), location: 0),
+                                                .init(color: colorScheme == .dark ? Color.fadeOutShadowDark.opacity(0.8) : Color.white.opacity(0.8), location: 0.5),
+                                                .init(color: colorScheme == .dark ? Color.fadeOutShadowDark.opacity(1) : Color.white.opacity(1), location: 1)
                                             ]),
                                             startPoint: .leading,
                                             endPoint: .trailing
@@ -345,7 +346,7 @@ struct ChatOptionsView: View {
                         
                 }
                 .padding()
-                .background(Color.offWhite)
+                .background(colorScheme == .dark ? Color.black : Color.offWhite)
                 .clipShape(RoundedRectangle(cornerRadius: 17))
                 Spacer()
                 
@@ -391,7 +392,7 @@ struct ChatOptionsView: View {
 
 //struct ChatView_Previews: PreviewProvider {
 //    static var previews: some View {
-//        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestMessage: "hi", latestSender: "alice", latestTime: Date(), typing: "alice", members: ["bob", "alice"], name: "Steve Jobs"), otherUID: "bob"), debug: true)
+//        ChatView(chatmodel: ChatModel(chat: Chat(id: "uHzegTVQWDePh8niEjnX", latestSender: "alice", latestTime: Date(), members: ["bob", "alice"], name: "Steve Jobs"), otherUID: "bob"), debug: true)
 //    }
 //}
 

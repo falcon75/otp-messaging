@@ -20,10 +20,8 @@ struct Message: Codable, Identifiable, Equatable, Hashable {
 
 struct Chat: Codable, Identifiable, Equatable, Hashable {
     @DocumentID var id: String?
-    var latestMessage: String
     var latestSender: String
     var latestTime: Date
-    var typing: String
     var members: [String]
     var newPad: Bool
     var newMessage: Bool?
@@ -34,7 +32,7 @@ struct Chat: Codable, Identifiable, Equatable, Hashable {
     var latestLocalMessage: String?
     
     private enum CodingKeys: String, CodingKey {
-        case id, latestMessage, latestSender, latestTime, typing, members, newPad
+        case id, latestSender, latestTime, members, newPad
     }
 }
 
@@ -162,34 +160,40 @@ class ChatModel: ObservableObject {
                         return
                     }
                     
-                    let minCount = min(msg.cipherBytes.count, self.code.count)
-                    
-                    var resultBytes = [UInt16]()
-                    for i in 0..<minCount {
-                        resultBytes.append(msg.cipherBytes[i] ^ self.code[i])
-                    }
-                    
-                    // delete chat
-                    self.db.collection("chats").document(self.chat.id!).collection("messages").document(msg.id!).delete() { err in
-                        if let err = err {
-                            print("Error removing document: \(err)")
-                            return
-                        } else {
-                            print("Document successfully removed!")
+                    var plain = ""
+                    if self.code.count < msg.cipherBytes.count {
+                        plain = self.bytesToString(msg.cipherBytes) ?? ""
+                    } else {
+                        let minCount = min(msg.cipherBytes.count, self.code.count)
+                        
+                        var resultBytes = [UInt16]()
+                        for i in 0..<minCount {
+                            resultBytes.append(msg.cipherBytes[i] ^ self.code[i])
                         }
+                        
+                        // delete chat
+                        self.db.collection("chats").document(self.chat.id!).collection("messages").document(msg.id!).delete() { err in
+                            if let err = err {
+                                print("Error removing document: \(err)")
+                                return
+                            } else {
+                                print("Document successfully removed!")
+                            }
+                        }
+                        
+                        // empty sender field
+                        let update: [String: Any] = ["latestSender": ""]
+                        self.db.collection("chats").document(self.chat.id!).updateData(update) { error in
+                            if let error = error {
+                                print("Error updating document: \(error)")
+                            } else {
+                                print("New message status updated successfully")
+                            }
+                        }
+                        plain = self.bytesToString(resultBytes) ?? ""
+                        self.code = Array(self.code[msg.cipherBytes.count...])
                     }
                     
-                    // empty sender field
-                    let update: [String: Any] = ["latestSender": ""]
-                    self.db.collection("chats").document(self.chat.id!).updateData(update) { error in
-                        if let error = error {
-                            print("Error updating document: \(error)")
-                        } else {
-                            print("New message status updated successfully")
-                        }
-                    }
-                    let plain = self.bytesToString(resultBytes) ?? "Err:12"
-                    self.code = Array(self.code[msg.cipherBytes.count...])
                     let newMsg = MessageDec(id: UUID().uuidString, date: msg.date, text: plain, sender: msg.sender)
                     self.messagesDec.append(newMsg)
                     self.chatsStore.localChats[self.chat.id!]!.latestLocalMessage = plain
@@ -236,7 +240,7 @@ class ChatModel: ObservableObject {
         
         do {
             let _ = try db.collection("chats").document(chat.id!).collection("messages").addDocument(from: msg) // add message
-            let update: [String: Any] = ["latestSender": user.uid, "latestMessage": "hi", "latestTime": Date()] // set sender field
+            let update: [String: Any] = ["latestSender": user.uid, "latestTime": Date()] // set sender field
             db.collection("chats").document(chat.id!).updateData(update) { error in
                 if let error = error {
                     print("Error updating document: \(error)")
